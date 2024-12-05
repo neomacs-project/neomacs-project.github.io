@@ -1,13 +1,305 @@
-<body class="focus-tail"><h1 operator="" id="buffers">Buffers</h1><h2 id="buffer-management-functions">Buffer management functions</h2><dl><dt>Function: <code>get-buffer</code> <code>(name)</code></dt><dd>Find and return a buffer with NAME, return nil if not found.</dd><dt>Function: <code>make-buffer</code> <code>(name &amp;rest args)</code></dt><dd>Create a buffer with NAME.</dd><dd>ARGS is passed as initialization arguments besides some extra keyword
+<!DOCTYPE html>
+<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+
+@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+
+@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.focus{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail::after{
+    content: " ";
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 0.4em;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.range-selection{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+code{
+    font-family: monospace;
+}
+
+:link{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.invisible{
+    display: none;
+}
+
+::highlight(neomacs){
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::highlight(neomacs-range){
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+#neomacs-cursor{
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}</style><style id="neomacs-style-DOC-MODE">body{
+    left: 0;
+    right: 0;
+    white-space: pre-wrap;
+    padding-left: 1em;
+}
+
+body.focus-tail::after{
+    content: "  ";
+    white-space: pre;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}</style><style id="neomacs-style-LISP-MODE">.symbol{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+}
+
+.symbol:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+
+
+.symbol:empty::after{
+    content: "_";
+}
+
+.symbol:empty:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.symbol:empty.focus-tail::after{
+    content: "_";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    color: #a997a0;
+}
+
+.string::before{
+    content: "\"";
+}
+
+.string::after{
+    content: "\"";
+}
+
+.string:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.string.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string.focus-tail::after{
+    content: "\"";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.object{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    text-decoration: underline;
+}
+
+.object:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.symbol[symbol-type="ghost"]{
+    margin-right: 0!important;
+}
+
+.symbol[symbol-type="macro"][operator]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="keyword"]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="special-operator"][operator]{
+    color: #d29fa8;
+}
+
+.list{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    padding-left: 0.4em;
+}
+
+.list::before{
+    content: "(";
+    margin-left: -0.4em;
+}
+
+.list::after{
+    content: ")";
+    vertical-align: bottom;
+}
+
+.list:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.list.focus-tail::after{
+    content: ")";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.comment{
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.comment::after{
+    content: "⁣";
+}
+
+.comment[comment-level="1"]{
+    position: sticky;
+    left: 20em;
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="2"]{
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]{
+    font-size: 1.2em;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+.comment[comment-level="4"]{
+    font-size: 1.1em;
+    color: #a997a0;
+}
+
+.comment[comment-level="4"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+[compiler-note-severity="note"]{
+    border: solid 1px rgba(169,151,160,1.0);
+}
+
+[compiler-note-severity="style-warning"]{
+    border: dashed 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="warning"]{
+    border: solid 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="error"]{
+    border: double 1px rgba(240,0,120,1.0);
+}</style><style id="neomacs-style-HTML-DOC-MODE">:empty::after{
+    content: "_";
+}
+
+li p{
+    margin: 0;
+}
+
+body{
+    white-space: normal;
+    max-width: 48rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.comma-expr::before{
+    content: ",";
+}
+
+.comma-expr{
+    border: solid 1px currentColor;
+}</style></head><body><h1 operator="" id="buffers">Buffers</h1><h2 id="buffer-management-functions">Buffer management functions</h2><dl><dt>Function: <code>get-buffer</code> <code>( . name)</code></dt><dd>Find and return a buffer with NAME, return nil if not found.</dd><dt>Function: <code>make-buffer</code> <code>(name&amp;rest . args)</code></dt><dd>Create a buffer with NAME.</dd><dd>ARGS is passed as initialization arguments besides some extra keyword
 arguments:</dd><dd>:mode MODE-OR-MODES: Enable MODE-OR-MODES in the new
 buffer. MODE-OR-MODES can either be a list or a single symbol.</dd><dd>:disambiguate SUFFIX: When provided, try appending <code>&lt;SUFFIX&gt;</code> to NAME
 in case of name collision before trying <code>&lt;number&gt;</code>.</dd><dd>:revert REVERT-P: If REVERT-P is t, call <code>revert-buffer</code> on the new
-buffer.</dd><dt>Function: <code>get-buffer-create</code> <code>(name &amp;rest args)</code></dt><dd>Returning a buffer with NAME if found, or create one.</dd><dd>When creating a new buffer, NAME and ARGS has the same meaning as in
-<code>make-buffer</code>.</dd><dd>If an existing buffer is found, it is reinitialized with ARGS.</dd><dt>Progn generic function: <code>on-delete-buffer</code> <code>(buffer)</code></dt><dd>Run when BUFFER is about to be deleted.</dd></dl><h2 id="buffer-focus">Buffer focus</h2><p>Neomacs keep track of the current position being edited using a focus <a href="markers.html">marker</a>.</p><dl><dt>Function: <code>focus</code> <code>(&amp;optional (buffer (current-buffer)))</code></dt></dl><p>Customize how buffer focus is rendered:</p><dl><dt>Standard generic function: <code>render-focus-aux</code> <code>(buffer pos)</code></dt><dd>Render focus at POS for BUFFER</dd></dl><h2 id="buffer-selection">Buffer selection</h2><p> Neomacs tracks selection with a selection <a href="markers.html">marker</a>. The <a href="ranges.html">range</a> between the selection marker and focus marker is considered selected when <code>selection-active</code> is <code>t</code>. Certain commands (for example, some <a href="edit.html#clipboard-commands">clipboard commands</a>) that normally act on focused element will act on the selected range instead if selection is active.</p><dl><dt>Standard generic function, setf-able: <code>selection-marker</code> <code>(object)</code></dt><dt>Standard generic function, setf-able: <code>selection-active</code> <code>(object)</code></dt></dl><h2 id="buffer-management-commands">Buffer management commands</h2><dl><dt>Command (<code>C-x b</code>): <code>switch-to-buffer</code> <code>(buffer &amp;optional (victim (focused-buffer)))</code></dt><dt>Command: <code>bury-buffer</code> <code>(&amp;optional (buffer (current-buffer)))</code></dt><dd>Stop displaying BUFFER.</dd><dt>Command (<code>C-x k</code>): <code>delete-buffer</code> <code>(buffer)</code></dt><dt>Command (<code>s-k</code>): <code>delete-this-buffer</code> <code>()</code></dt></dl><p>There is also a dedicated list mode for managing buffers:</p><dl><dt>Command: <code>list-buffers</code> <code>()</code></dt></dl><h2 id="loading-urls">Loading URLs</h2><dl><dt>Function: <code>load-url</code> <code>(buffer url)</code></dt><dd>Load URL in BUFFER.</dd><dd>This set up a promise handler so that <code>on-buffer-loaded</code> is triggered
-when URL finishes loading. We use this instead of Electron's
-<code>did-finish-load</code> event because the latter doesn't carry url
-information, and getting url with <code>webContents.getURL()</code> isn't
+buffer.</dd><dt>Function: <code>get-buffer-create</code> <code>(name&amp;rest . args)</code></dt><dd>Returning a buffer with NAME if found, or create one.</dd><dd>When creating a new buffer, NAME and ARGS has the same meaning as in
+<code>make-buffer</code>.</dd><dd>If an existing buffer is found, it is reinitialized with ARGS.</dd><dt>Progn generic function: <code>on-delete-buffer</code> <code>( . buffer)</code></dt><dd>Run when BUFFER is about to be deleted.</dd></dl><h2 id="buffer-focus">Buffer focus</h2><p>Neomacs keep track of the current position being edited using a focus <a href="markers.html">marker</a>.</p><dl><dt>Function: <code>focus</code> <code>(&amp;optional . (buffer (current-buffer)))</code></dt></dl><p>Customize how buffer focus is rendered:</p><dl><dt>Standard generic function: <code>render-focus-aux</code> <code>(buffer . pos)</code></dt><dd>Render focus at POS for BUFFER</dd></dl><h2 id="buffer-selection">Buffer selection</h2><p> Neomacs tracks selection with a selection <a href="markers.html">marker</a>. The <a href="ranges.html">range</a> between the selection marker and focus marker is considered selected when <code>selection-active</code> is <code>t</code>. Certain commands (for example, some <a href="edit.html#clipboard-commands">clipboard commands</a>) that normally act on focused element will act on the selected range instead if selection is active.</p><dl><dt>Standard generic function, setf-able: <code>selection-marker</code> <code>( . object)</code></dt><dt>Standard generic function, setf-able: <code>selection-active</code> <code>( . object)</code></dt></dl><h2 id="buffer-management-commands">Buffer management commands</h2><dl><dt>Command (<code>C-x b</code>): <code>switch-to-buffer</code> <code>(buffer&amp;optional . (victim (focused-buffer)))</code></dt><dt>Command: <code>bury-buffer</code> <code>(&amp;optional . (buffer (current-buffer)))</code></dt><dd>Stop displaying BUFFER.</dd><dt>Command (<code>C-x k</code>): <code>delete-buffer</code> <code>( . buffer)</code></dt><dt>Command (<code>s-k</code>): <code>delete-this-buffer</code> <code>( nil)</code></dt></dl><p>There is also a dedicated list mode for managing buffers:</p><dl><dt>Command: <code>list-buffers</code> <code>( nil)</code></dt></dl><h2 id="loading-urls">Loading URLs</h2><dl><dt>Function: <code>load-url</code> <code>(buffer . url)</code></dt><dd>Load URL in BUFFER.</dd><dd>This set up a promise handler so that <code>on-buffer-loaded</code> is triggered
+when URL finishes loading. We use this instead of Electron&#39;s
+<code>did-finish-load</code> event because the latter doesn&#39;t carry url
+information, and getting url with <code>webContents.getURL()</code> isn&#39;t
 reliable because it may get the URL of a later issued unfinished load
-operation.</dd><dt>Standard generic function, setf-able: <code>load-status</code> <code>(object)</code></dt><dt>Progn generic function: <code>on-buffer-dom-ready</code> <code>(buffer)</code></dt><dt>Progn generic function: <code>on-buffer-loaded</code> <code>(buffer url err)</code></dt><dd>Run when BUFFER finishes loading URL.</dd><dd>This is invoked both when load succeeded or failed. When load
-succeeded, ERR is nil.</dd><dt>Progn generic function: <code>on-buffer-did-start-navigation</code> <code>(buffer details)</code></dt></dl>
-</body>
+operation.</dd><dt>Standard generic function, setf-able: <code>load-status</code> <code>( . object)</code></dt><dt>Progn generic function: <code>on-buffer-dom-ready</code> <code>( . buffer)</code></dt><dt>Progn generic function: <code>on-buffer-loaded</code> <code>(bufferurl . err)</code></dt><dd>Run when BUFFER finishes loading URL.</dd><dd>This is invoked both when load succeeded or failed. When load
+succeeded, ERR is nil.</dd><dt>Progn generic function: <code>on-buffer-did-start-navigation</code> <code>(buffer . details)</code></dt></dl>
+</body></html>

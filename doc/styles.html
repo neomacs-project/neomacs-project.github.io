@@ -1,5 +1,299 @@
-<body class="focus-tail"><h1 operator="" id="styles">Styles</h1><p>Neomacs manages a collection of <i>styles</i> named by symbols. A style is either a mixin defined with <code>defstyle</code> or a style sheet defined with <code>defsheet</code>. A mixin specify a collection of CSS attributes, and a style sheet map CSS selectors to CSS attributes. Styles can inherit from each other. A buffer can include a list of style sheets (via buffer's <code>styles</code> slot), which are compiled to CSS and injected into the renderer. Neomacs automatically updates affected CSS if any style is changed because of redefinition or <code>set-style</code>.</p><p>Format of mixin style (<code>defstyle</code>) spec: <code>({block | :key value}*)</code>, where each block has the format <code>(selector {block | :key value}*)</code></p><p>Format of sheet style (<code>defsheet</code>) spec: <code>(block*)</code></p><p>Above <code>:key</code>'s are either CSS attribute names, or <code>:inherit</code>, in which case <code>value</code> should name a style which would be expanded in place.</p><dl><dt>Macro: <code>defstyle</code> <code>(symbol spec &amp;optional doc)</code></dt><dd>Define a style named by SYMBOL.</dd><dd>This also exports SYMBOL from current package.</dd><dt>Macro: <code>defsheet</code> <code>(symbol spec &amp;optional doc)</code></dt><dd>Define a style sheet named by SYMBOL.</dd><dd>This also exports SYMBOL from current package.</dd><dt>Variable: <code>*styles*</code></dt><dd>List of all known styles.</dd><dt>Function: <code>set-style</code> <code>(&amp;rest bindings)</code></dt><dd>Set styles or style sheets according to BINDINGS.</dd><dd>BINDINGS should be of the form {SYMBOL SPEC}*, and style or style
-sheet named by each SYMBOL is set to SPEC.</dd><dd>Example: (set-style 'default '(:font-family &quot;sans-serif&quot;)
-    'bold '(:font-weight 900))</dd><dd>SYMBOL is allowed to take some special value:</dd><dd>:native-theme -- SPEC should be one of &quot;system&quot;,&quot;dark&quot; and &quot;light&quot;. This sets the color theme used by the renderer.</dd><dt>Function: <code>css-cell</code> <code>(symbol)</code></dt><dd>Return the cell that stores the compiled CSS of the style sheet named
+<!DOCTYPE html>
+<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+
+@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+
+@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.focus{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail::after{
+    content: " ";
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 0.4em;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.range-selection{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+code{
+    font-family: monospace;
+}
+
+:link{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.invisible{
+    display: none;
+}
+
+::highlight(neomacs){
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::highlight(neomacs-range){
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+#neomacs-cursor{
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}</style><style id="neomacs-style-DOC-MODE">body{
+    left: 0;
+    right: 0;
+    white-space: pre-wrap;
+    padding-left: 1em;
+}
+
+body.focus-tail::after{
+    content: "  ";
+    white-space: pre;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}</style><style id="neomacs-style-LISP-MODE">.symbol{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+}
+
+.symbol:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+
+
+.symbol:empty::after{
+    content: "_";
+}
+
+.symbol:empty:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.symbol:empty.focus-tail::after{
+    content: "_";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    color: #a997a0;
+}
+
+.string::before{
+    content: "\"";
+}
+
+.string::after{
+    content: "\"";
+}
+
+.string:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.string.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string.focus-tail::after{
+    content: "\"";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.object{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    text-decoration: underline;
+}
+
+.object:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.symbol[symbol-type="ghost"]{
+    margin-right: 0!important;
+}
+
+.symbol[symbol-type="macro"][operator]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="keyword"]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="special-operator"][operator]{
+    color: #d29fa8;
+}
+
+.list{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    padding-left: 0.4em;
+}
+
+.list::before{
+    content: "(";
+    margin-left: -0.4em;
+}
+
+.list::after{
+    content: ")";
+    vertical-align: bottom;
+}
+
+.list:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.list.focus-tail::after{
+    content: ")";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.comment{
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.comment::after{
+    content: "⁣";
+}
+
+.comment[comment-level="1"]{
+    position: sticky;
+    left: 20em;
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="2"]{
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]{
+    font-size: 1.2em;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+.comment[comment-level="4"]{
+    font-size: 1.1em;
+    color: #a997a0;
+}
+
+.comment[comment-level="4"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+[compiler-note-severity="note"]{
+    border: solid 1px rgba(169,151,160,1.0);
+}
+
+[compiler-note-severity="style-warning"]{
+    border: dashed 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="warning"]{
+    border: solid 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="error"]{
+    border: double 1px rgba(240,0,120,1.0);
+}</style><style id="neomacs-style-HTML-DOC-MODE">:empty::after{
+    content: "_";
+}
+
+li p{
+    margin: 0;
+}
+
+body{
+    white-space: normal;
+    max-width: 48rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.comma-expr::before{
+    content: ",";
+}
+
+.comma-expr{
+    border: solid 1px currentColor;
+}</style></head><body><h1 operator="" id="styles">Styles</h1><p>Neomacs manages a collection of <i>styles</i> named by symbols. A style is either a mixin defined with <code>defstyle</code> or a style sheet defined with <code>defsheet</code>. A mixin specify a collection of CSS attributes, and a style sheet map CSS selectors to CSS attributes. Styles can inherit from each other. A buffer can include a list of style sheets (via buffer&#39;s <code>styles</code> slot), which are compiled to CSS and injected into the renderer. Neomacs automatically updates affected CSS if any style is changed because of redefinition or <code>set-style</code>.</p><p>Format of mixin style (<code>defstyle</code>) spec: <code>({block | :key value}*)</code>, where each block has the format <code>(selector {block | :key value}*)</code></p><p>Format of sheet style (<code>defsheet</code>) spec: <code>(block*)</code></p><p>Above <code>:key</code>&#39;s are either CSS attribute names, or <code>:inherit</code>, in which case <code>value</code> should name a style which would be expanded in place.</p><dl><dt>Macro: <code>defstyle</code> <code>(symbolspec&amp;optional . doc)</code></dt><dd>Define a style named by SYMBOL.</dd><dd>This also exports SYMBOL from current package.</dd><dt>Macro: <code>defsheet</code> <code>(symbolspec&amp;optional . doc)</code></dt><dd>Define a style sheet named by SYMBOL.</dd><dd>This also exports SYMBOL from current package.</dd><dt>Variable: <code>*styles*</code></dt><dd>List of all known styles.</dd><dt>Function: <code>set-style</code> <code>(&amp;rest . bindings)</code></dt><dd>Set styles or style sheets according to BINDINGS.</dd><dd>BINDINGS should be of the form {SYMBOL SPEC}*, and style or style
+sheet named by each SYMBOL is set to SPEC.</dd><dd>Example: (set-style &#39;default &#39;(:font-family &quot;sans-serif&quot;)
+    &#39;bold &#39;(:font-weight 900))</dd><dd>SYMBOL is allowed to take some special value:</dd><dd>:native-theme -- SPEC should be one of &quot;system&quot;,&quot;dark&quot; and &quot;light&quot;. This sets the color theme used by the renderer.</dd><dt>Function: <code>css-cell</code> <code>( . symbol)</code></dt><dd>Return the cell that stores the compiled CSS of the style sheet named
 by SYMBOL.</dd><dd>Can be <code>cell-ref</code>ed to get the up-to-date CSS string for the style
-named by SYMBOL.</dd></dl><h2 id="mounting-assets-directories">Mounting assets directories</h2><p>The renderer processes don't have direct access to your file system. To use local assets in the renderer (in HTML, CSS, JavaScript, etc), mount them under the <code>neomacs</code> protocol scheme.</p><dl><dt>Function: <code>mount-asset</code> <code>(host path)</code></dt><dd>Mount files under PATH to neomacs://HOST/.</dd></dl><p>By default, <code>neomacs://sys/</code> is mounted to assets that come with Neomacs and <code>neomacs://user/</code> is mounted to <code>(uiop:xdg-config-home &quot;neomacs/assets/&quot;)</code> (usually located at <code>~/.config/neomacs/assets/</code> on Unix-like systems). For example, <code>neomacs://user/1.png</code> would access <code>~/.config/neomacs/assets/1.png</code>. <code>neomacs://contents/</code> is reserved for internal use (currently, <code>file-mode</code> use it to serve temporarily generated HTML).</p><h2 id="themes">Themes</h2><dl><dt>Command: <code>apply-theme</code> <code>(theme)</code></dt><dd>Apply THEME.</dd><dt>Macro: <code>define-theme</code> <code>(name doc &amp;body bindings)</code></dt><dd>Define a theme with NAME.</dd><dd>BINDINGS are passed as arguments to <code>set-style</code> to apply the theme.</dd><dt>Variable: <code>*themes*</code></dt><dd>List of all known themes</dd></dl></body>
+named by SYMBOL.</dd></dl><h2 id="mode-style-sheets">Mode style sheets</h2><p>If a style with the same name as a mode is present, enabling this mode will automatically load it into current buffer (therefore it should always be a style sheet rather than a mixin). This style sheet is intended for the mode to define styles for nodes it uses, and is therefore not removed when the mode is disabled, to avoid repeated loading in case the mode is enabled again later.</p><p>Sometimes you might want to use mode style sheets to modify appearance of a buffer, in which case you should add a <code>disable-aux</code> method to remove such style sheet when the mode is disabled.</p><h2 id="mounting-assets-directories">Mounting assets directories</h2><p>The renderer processes don&#39;t have direct access to your file system. To use local assets in the renderer (in HTML, CSS, JavaScript, etc), mount them under the <code>neomacs</code> protocol scheme.</p><dl><dt>Function: <code>mount-asset</code> <code>(host . path)</code></dt><dd>Mount files under PATH to neomacs://HOST/.</dd></dl><p>By default, <code>neomacs://sys/</code> is mounted to assets that come with Neomacs and <code>neomacs://user/</code> is mounted to <code>(uiop:xdg-config-home &quot;neomacs/assets/&quot;)</code> (usually located at <code>~/.config/neomacs/assets/</code> on Unix-like systems). For example, <code>neomacs://user/1.png</code> would access <code>~/.config/neomacs/assets/1.png</code>. <code>neomacs://contents/</code> is reserved for internal use (currently, <code>file-mode</code> use it to serve temporarily generated HTML).</p><h2 id="themes">Themes</h2><dl><dt>Command: <code>apply-theme</code> <code>( . theme)</code></dt><dd>Apply THEME.</dd><dt>Macro: <code>define-theme</code> <code>(namedoc&amp;body . bindings)</code></dt><dd>Define a theme with NAME.</dd><dd>BINDINGS are passed as arguments to <code>set-style</code> to apply the theme,
+except the following special kinds of bindings:</dd><dd>:inherit PARENT: PARENT is a symbol which names another theme. Styles
+not defined in this theme are inherited from PARENT.</dd><dt>Variable: <code>*themes*</code></dt><dd>List of all known themes</dd></dl></body></html>

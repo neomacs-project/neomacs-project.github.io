@@ -1,5 +1,297 @@
-<body class="focus-tail"><h1 operator="" id="undo">Undo</h1><p>Undo support in Neomacs is provided by <code>undo-mode</code>.</p><dl><dt>Class: <code>undo-mode</code> inherits <code>(standard-object)</code></dt><dd>Support undo in current buffer.</dd><dd><dl><dt>Slot: <code>undo-entry</code></dt><dt>Slot: <code>amalgamate-limit</code><dd>Maximum number of consecutive commands to amalgamate undo.</dd></dt><dt>Slot: <code>amalgamate-count</code><dd>Number of already amalgamated commands.</dd></dt></dl></dd></dl><h2 id="undo-commands">Undo commands</h2><dl><dt>Function: <code>undo</code> <code>(&amp;optional (buffer (current-buffer)))</code></dt><dd>Move undo state up one <code>undo-entry</code>.</dd><dt>Function: <code>redo</code> <code>(&amp;optional (branch-index 0) (buffer (current-buffer)))</code></dt><dd>Move undo state down to BRANCH-INDEX-th child.</dd><dt>Command in undo-mode: <code>next-branch</code> <code>(&amp;optional (buffer (current-buffer)))</code></dt><dd>Goto next sibling branch in undo history.</dd><dt>Command in undo-mode: <code>previous-branch</code> <code>(&amp;optional (buffer (current-buffer)))</code></dt><dd>Goto previous sibling branch in undo history.</dd><dt>Command in undo-mode (<code>C-x u</code>): <code>undo-history</code> <code>()</code></dt><dd>Show undo history and enable <code>active-undo-mode</code>.</dd><dt>Command in active-undo-mode (<code>q, C-g, enter</code>): <code>quit-undo-history</code> <code>()</code></dt></dl><h2 id="recording-undo-information">Recording undo information</h2><p>The primitive <code>record-undo</code> adds a pair of thunks to the undo history, which are called to undo or redo some changes.</p><dl><dt>Function: <code>record-undo</code> <code>(undo-thunk redo-thunk buffer)</code></dt><dd>Add UNDO-THUNK and REDO-THUNK to BUFFER's undo history.</dd><dd>If <code>*inhibit-record-undo*</code> is non-nil, do nothing instead.</dd><dt>Variable: <code>*inhibit-record-undo*</code></dt><dd>If non-nil, <code>record-undo</code> has no effect.</dd><dd>This is bound to non-nil during undo process itself.</dd></dl><p> All <a href="edit.html#editing-primitives">editing primitives</a> maintain undo information themselves. Changes to <a href="dom.html#attributes">attributes</a> are normally not recorded in undo history, but you can bind <code>*record-attribute-undo*</code> to <code>t</code> to make attribute changes undoable.</p><dl><dt>Variable: <code>*record-attribute-undo*</code></dt><dd>Record undo information when setting attributes.</dd><dd>Note that this only affects <code>(setf attribute)</code>, not computed
-attributes (<code>set-attribute-function</code>).</dd></dl><h2 id="undo-boundaries">Undo boundaries</h2><p>Undo commands and the <code>undo-history</code> buffer both group series of undoable changes and operates on them as a whole. An <i>undo boundary</i> marks the end of previous group and the start of a new one. The <a href="command-loop.html">command loop</a> inserts an undo boundary before every command invocation, but this can be removed by <code>remove-undo-boundary</code>, or automatically by <code>undo-auto-amalgamate</code>.</p><dl><dt>Function: <code>undo-boundary</code> <code>(&amp;optional (buffer (current-buffer)))</code></dt><dd>Ensure undo state is at a undo boudary, insert one if necessary.</dd><dt>Function: <code>remove-undo-boundary</code> <code>(buffer)</code></dt><dd>Remove undo boudary (if any) at current undo state.</dd><dt>Function: <code>undo-auto-amalgamate</code> <code>()</code></dt><dd>Call at the beginning of a command to amalgamate undo entry.</dd><dd>This amalgamate the undo entry if <code>*this-command*</code> is the same as
+<!DOCTYPE html>
+<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+
+@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+
+@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.focus{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail::after{
+    content: " ";
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 0.4em;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.range-selection{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+code{
+    font-family: monospace;
+}
+
+:link{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.invisible{
+    display: none;
+}
+
+::highlight(neomacs){
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::highlight(neomacs-range){
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+#neomacs-cursor{
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}</style><style id="neomacs-style-DOC-MODE">body{
+    left: 0;
+    right: 0;
+    white-space: pre-wrap;
+    padding-left: 1em;
+}
+
+body.focus-tail::after{
+    content: "  ";
+    white-space: pre;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}</style><style id="neomacs-style-LISP-MODE">.symbol{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+}
+
+.symbol:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+
+
+.symbol:empty::after{
+    content: "_";
+}
+
+.symbol:empty:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.symbol:empty.focus-tail::after{
+    content: "_";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    color: #a997a0;
+}
+
+.string::before{
+    content: "\"";
+}
+
+.string::after{
+    content: "\"";
+}
+
+.string:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.string.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string.focus-tail::after{
+    content: "\"";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.object{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    text-decoration: underline;
+}
+
+.object:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.symbol[symbol-type="ghost"]{
+    margin-right: 0!important;
+}
+
+.symbol[symbol-type="macro"][operator]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="keyword"]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="special-operator"][operator]{
+    color: #d29fa8;
+}
+
+.list{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    padding-left: 0.4em;
+}
+
+.list::before{
+    content: "(";
+    margin-left: -0.4em;
+}
+
+.list::after{
+    content: ")";
+    vertical-align: bottom;
+}
+
+.list:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.list.focus-tail::after{
+    content: ")";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.comment{
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.comment::after{
+    content: "⁣";
+}
+
+.comment[comment-level="1"]{
+    position: sticky;
+    left: 20em;
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="2"]{
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]{
+    font-size: 1.2em;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+.comment[comment-level="4"]{
+    font-size: 1.1em;
+    color: #a997a0;
+}
+
+.comment[comment-level="4"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+[compiler-note-severity="note"]{
+    border: solid 1px rgba(169,151,160,1.0);
+}
+
+[compiler-note-severity="style-warning"]{
+    border: dashed 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="warning"]{
+    border: solid 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="error"]{
+    border: double 1px rgba(240,0,120,1.0);
+}</style><style id="neomacs-style-HTML-DOC-MODE">:empty::after{
+    content: "_";
+}
+
+li p{
+    margin: 0;
+}
+
+body{
+    white-space: normal;
+    max-width: 48rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.comma-expr::before{
+    content: ",";
+}
+
+.comma-expr{
+    border: solid 1px currentColor;
+}</style></head><body><h1 id="undo">Undo</h1><p>Undo support in Neomacs is provided by <code>undo-mode</code>.</p><dl><dt>Class: <code>undo-mode</code> inherits <code>( . standard-object)</code></dt><dd>Support undo in current buffer.</dd><dd><dl><dt>Slot: <code>undo-entry</code></dt><dt>Slot: <code>amalgamate-limit</code><dd>Maximum number of consecutive commands to amalgamate undo.</dd></dt><dt>Slot: <code>amalgamate-count</code><dd>Number of already amalgamated commands.</dd></dt></dl></dd></dl><h2 id="undo-commands">Undo commands</h2><dl><dt>Function: <code>undo</code> <code>(&amp;optional . (buffer (current-buffer)))</code></dt><dd>Move undo state up one <code>undo-entry</code>.</dd><dt>Function: <code>redo</code> <code>(&amp;optional(branch-index 0) . (buffer (current-buffer)))</code></dt><dd>Move undo state down to BRANCH-INDEX-th child.</dd><dt>Command in undo-mode: <code>next-branch</code> <code>(&amp;optional . (buffer (current-buffer)))</code></dt><dd>Goto next sibling branch in undo history.</dd><dt>Command in undo-mode: <code>previous-branch</code> <code>(&amp;optional . (buffer (current-buffer)))</code></dt><dd>Goto previous sibling branch in undo history.</dd><dt>Command in undo-mode (<code>C-x u</code>): <code>undo-history</code> <code>( nil)</code></dt><dd>Show undo history and enable <code>active-undo-mode</code>.</dd><dt>Command in active-undo-mode (<code>q, C-g, enter</code>): <code>quit-undo-history</code> <code>( nil)</code></dt></dl><h2 id="recording-undo-information">Recording undo information</h2><p>The primitive <code>record-undo</code> adds a pair of thunks to the undo history, which are called to undo or redo some changes.</p><dl><dt>Function: <code>record-undo</code> <code>(undo-thunkredo-thunk . buffer)</code></dt><dd>Add UNDO-THUNK and REDO-THUNK to BUFFER&#39;s undo history.</dd><dd>If <code>*inhibit-record-undo*</code> is non-nil, do nothing instead.</dd><dt>Variable: <code>*inhibit-record-undo*</code></dt><dd>If non-nil, <code>record-undo</code> has no effect.</dd><dd>This is bound to non-nil during undo process itself.</dd></dl><p> All <a href="edit.html#editing-primitives">editing primitives</a> maintain undo information themselves. Changes to <a href="dom.html#attributes">attributes</a> are normally not recorded in undo history, but you can bind <code>*record-attribute-undo*</code> to <code>t</code> to make attribute changes undoable.</p><dl><dt>Variable: <code>*record-attribute-undo*</code></dt><dd>Record undo information when setting attributes.</dd><dd>Note that this only affects <code>(setf attribute)</code>, not computed
+attributes (<code>set-attribute-function</code>).</dd></dl><h2 id="undo-boundaries">Undo boundaries</h2><p>Undo commands and the <code>undo-history</code> buffer both group series of undoable changes and operates on them as a whole. An <i>undo boundary</i> marks the end of previous group and the start of a new one. The <a href="command-loop.html">command loop</a> inserts an undo boundary before every command invocation, but this can be removed by <code>remove-undo-boundary</code>, or automatically by <code>undo-auto-amalgamate</code>.</p><dl><dt>Function: <code>undo-boundary</code> <code>(&amp;optional . (buffer (current-buffer)))</code></dt><dd>Ensure undo state is at a undo boudary, insert one if necessary.</dd><dt>Function: <code>remove-undo-boundary</code> <code>( . buffer)</code></dt><dd>Remove undo boudary (if any) at current undo state.</dd><dt>Function: <code>undo-auto-amalgamate</code> <code>( nil)</code></dt><dd>Call at the beginning of a command to amalgamate undo entry.</dd><dd>This amalgamate the undo entry if <code>*this-command*</code> is the same as
 <code>*last-command*</code>, and if <code>amalgamate-count</code> will not exceed
 <code>amalgamate-limit</code>.</dd></dl>
-</body>
+</body></html>

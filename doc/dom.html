@@ -1,7 +1,299 @@
-<body class="focus-tail"><h1 class="" operator="" id="reactive-dom">Reactive DOM</h1><p class="">Neomacs maintain reactive DOMs based on <code>lwcells</code>. This enables observers and computed attributes to update in real-time depending on DOM content.</p><h2 class="" id="nodes">Nodes</h2><p class="">This section documents the low-level node classes making up Neomacs's reactive DOM. Note that the interface here is low-level in the sense that <code>text-node</code>'s are being exposed. The majority of Neomacs API hides <code>text-node</code>'s as an implementation detail and the DOM conceptually consists of <code>element</code>'s and <code>character</code>'s.</p><dl><dt>Class: <code>node</code> inherits <code>(standard-object)</code></dt><dd><dl><dt>Slot: <code>parent</code></dt><dt>Slot: <code>next-sibling</code></dt><dt>Slot: <code>previous-sibling</code></dt><dt>Slot: <code>host</code></dt></dl></dd><dt>Class: <code>text-node</code> inherits <code>(node)</code></dt><dd><dl><dt>Slot: <code>text</code></dt></dl></dd><dt>Class: <code>element</code> inherits <code>(node)</code></dt><dd><dl><dt>Slot: <code>first-child</code></dt><dt>Slot: <code>last-child</code></dt><dt>Slot: <code>tag-name</code></dt><dt>Slot: <code>attributes</code></dt><dt>Slot: <code>invisible-p</code></dt></dl></dd><dt>Function: <code>element-p</code> <code>(object)</code></dt><dt>Function: <code>text-node-p</code> <code>(object)</code></dt><dt>Function: <code>tag-name-p</code> <code>(node tag-name)</code></dt><dd>Test if NODE is an element with TAG-NAME.</dd><dt>Standard generic function: <code>clone-node</code> <code>(node &amp;optional deep)</code></dt><dd>Clone NODE.</dd><dd>If DEEP is non-nil, recursively clone all descendant.
-DEEP defaults to T.</dd><dt>Function: <code>child-nodes</code> <code>(node)</code></dt><dd>Return immediate child nodes of NODE as a list.</dd><dt>Function: <code>children</code> <code>(node)</code></dt><dd>Return immediate child elements of NODE as a list.</dd><dt>Function: <code>text-content</code> <code>(node)</code></dt><dt>Function: <code>get-elements-by-class-name</code> <code>(node class)</code></dt><dd>Find all descendant elements of NODE with CLASS.</dd></dl><h2 class="" id="traversing-dom">Traversing DOM</h2><dl><dt>Function: <code>do-dom</code> <code>(function node)</code></dt><dd>Call FUNCTION on every descendant of NODE in post-order.
-This includes <code>element</code>s and <code>text-node</code>s. Returns NODE.</dd><dt>Function: <code>do-elements</code> <code>(function node)</code></dt><dd>Like <code>do-dom</code>, but only call FUNCTION on <code>element</code>s. Returns NODE.</dd><dt>Function: <code>next-node</code> <code>(node)</code></dt><dd>Next DOM node in pre-order traversal.</dd><dt>Function: <code>previous-node</code> <code>(node)</code></dt><dd>Previous DOM node in pre-order traversal.</dd></dl><h2 id="attributes">Attributes</h2><p>In Neomacs, every attribute is backed by a cell. Other cells can depend on attribute value, and attribute values themselves can be computed and updated from other cell values. The following functions get and set attribute values or functions for compute them.</p><dl><dt>Function, setf-able: <code>attribute</code> <code>(element name)</code></dt><dt>Function: <code>set-attribute-function</code> <code>(element attribute function)</code></dt><dd>Set a computed attribute.
+<!DOCTYPE html>
+<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+
+@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+
+@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.focus{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail::after{
+    content: " ";
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 0.4em;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.range-selection{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+code{
+    font-family: monospace;
+}
+
+:link{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.invisible{
+    display: none;
+}
+
+::highlight(neomacs){
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::highlight(neomacs-range){
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+#neomacs-cursor{
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}</style><style id="neomacs-style-DOC-MODE">body{
+    left: 0;
+    right: 0;
+    white-space: pre-wrap;
+    padding-left: 1em;
+}
+
+body.focus-tail::after{
+    content: "  ";
+    white-space: pre;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}</style><style id="neomacs-style-LISP-MODE">.symbol{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+}
+
+.symbol:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+
+
+.symbol:empty::after{
+    content: "_";
+}
+
+.symbol:empty:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.symbol:empty.focus-tail::after{
+    content: "_";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    color: #a997a0;
+}
+
+.string::before{
+    content: "\"";
+}
+
+.string::after{
+    content: "\"";
+}
+
+.string:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.string.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string.focus-tail::after{
+    content: "\"";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.object{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    text-decoration: underline;
+}
+
+.object:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.symbol[symbol-type="ghost"]{
+    margin-right: 0!important;
+}
+
+.symbol[symbol-type="macro"][operator]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="keyword"]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="special-operator"][operator]{
+    color: #d29fa8;
+}
+
+.list{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    padding-left: 0.4em;
+}
+
+.list::before{
+    content: "(";
+    margin-left: -0.4em;
+}
+
+.list::after{
+    content: ")";
+    vertical-align: bottom;
+}
+
+.list:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.list.focus-tail::after{
+    content: ")";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.comment{
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.comment::after{
+    content: "⁣";
+}
+
+.comment[comment-level="1"]{
+    position: sticky;
+    left: 20em;
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="2"]{
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]{
+    font-size: 1.2em;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+.comment[comment-level="4"]{
+    font-size: 1.1em;
+    color: #a997a0;
+}
+
+.comment[comment-level="4"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+[compiler-note-severity="note"]{
+    border: solid 1px rgba(169,151,160,1.0);
+}
+
+[compiler-note-severity="style-warning"]{
+    border: dashed 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="warning"]{
+    border: solid 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="error"]{
+    border: double 1px rgba(240,0,120,1.0);
+}</style><style id="neomacs-style-HTML-DOC-MODE">:empty::after{
+    content: "_";
+}
+
+li p{
+    margin: 0;
+}
+
+body{
+    white-space: normal;
+    max-width: 48rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.comma-expr::before{
+    content: ",";
+}
+
+.comma-expr{
+    border: solid 1px currentColor;
+}</style></head><body><h1 class="" id="reactive-dom">Reactive DOM</h1><p class="">Neomacs maintain reactive DOMs based on <code>lwcells</code>. This enables observers and computed attributes to update in real-time depending on DOM content.</p><h2 class="" id="nodes">Nodes</h2><p class="">This section documents the low-level node classes making up Neomacs&#39;s reactive DOM. Note that the interface here is low-level in the sense that <code>text-node</code>&#39;s are being exposed. The majority of Neomacs API hides <code>text-node</code>&#39;s as an implementation detail and the DOM conceptually consists of <code>element</code>&#39;s and <code>character</code>&#39;s.</p><dl><dt>Class: <code>node</code> inherits <code>( . standard-object)</code></dt><dd><dl><dt>Slot: <code>parent</code></dt><dt>Slot: <code>next-sibling</code></dt><dt>Slot: <code>previous-sibling</code></dt><dt>Slot: <code>host</code></dt></dl></dd><dt>Class: <code>text-node</code> inherits <code>( . node)</code></dt><dd><dl><dt>Slot: <code>text</code></dt></dl></dd><dt>Class: <code>element</code> inherits <code>( . node)</code></dt><dd><dl><dt>Slot: <code>first-child</code></dt><dt>Slot: <code>last-child</code></dt><dt>Slot: <code>tag-name</code></dt><dt>Slot: <code>attributes</code></dt><dt>Slot: <code>invisible-p</code></dt></dl></dd><dt>Function: <code>element-p</code> <code>( . object)</code></dt><dt>Function: <code>text-node-p</code> <code>( . object)</code></dt><dt>Function: <code>tag-name-p</code> <code>(node . tag-name)</code></dt><dd>Test if NODE is an element with TAG-NAME.</dd><dt>Standard generic function: <code>clone-node</code> <code>(node&amp;optional . deep)</code></dt><dd>Clone NODE.</dd><dd>If DEEP is non-nil, recursively clone all descendant.
+DEEP defaults to T.</dd><dt>Function: <code>child-nodes</code> <code>( . node)</code></dt><dd>Return immediate child nodes of NODE as a list.</dd><dt>Function: <code>children</code> <code>( . node)</code></dt><dd>Return immediate child elements of NODE as a list.</dd><dt>Function: <code>text-content</code> <code>( . node)</code></dt><dt>Function: <code>get-elements-by-class-name</code> <code>(node . class)</code></dt><dd>Find all descendant elements of NODE with CLASS.</dd></dl><h2 class="" id="traversing-dom">Traversing DOM</h2><dl><dt>Function: <code>do-dom</code> <code>(function . node)</code></dt><dd>Call FUNCTION on every descendant of NODE in post-order.
+This includes <code>element</code>s and <code>text-node</code>s. Returns NODE.</dd><dt>Function: <code>do-elements</code> <code>(function . node)</code></dt><dd>Like <code>do-dom</code>, but only call FUNCTION on <code>element</code>s. Returns NODE.</dd><dt>Function: <code>next-node</code> <code>( . node)</code></dt><dd>Next DOM node in pre-order traversal.</dd><dt>Function: <code>previous-node</code> <code>( . node)</code></dt><dd>Previous DOM node in pre-order traversal.</dd></dl><h2 id="attributes">Attributes</h2><p>In Neomacs, every attribute is backed by a cell. Other cells can depend on attribute value, and attribute values themselves can be computed and updated from other cell values. The following functions get and set attribute values or functions for compute them.</p><dl><dt>Function, setf-able: <code>attribute</code> <code>(element . name)</code></dt><dt>Function: <code>set-attribute-function</code> <code>(elementattribute . function)</code></dt><dd>Set a computed attribute.
 Make ATTRIBUTE of ELEMENT computed by calling FUNCTION with
-ELEMENT as a single argument.</dd></dl><p>Attributes can have any name. Those named by strings are kept in sync with renderer-side attributes with the same names, i.e. changes in Lisp side are pushed to renderer (but not the other way). Those with non-string names (typically symbols) instead have no counterpart on renderer side.</p><p>Attribute related utility functions:</p><dl><dt>Function: <code>add-class</code> <code>(element class)</code></dt><dd>Add CSS CLASS to ELEMENT.</dd><dt>Function: <code>remove-class</code> <code>(element class)</code></dt><dd>Remove CSS CLASS from ELEMENT.</dd><dt>Function: <code>class-p</code> <code>(node class &amp;rest more-classes)</code></dt><dd>Test if NODE is an element of one of CSS CLASS or MORE-CLASSES.</dd></dl><h2 id="low-level-dom-edits"><p operator="">Low-level DOM edits</p></h2><p>This section documents low-level primitives for modifying Lisp-side DOM. They are used to implement programmer-facing editing operations, see <a href="edit.html#editing-primitives">Editing primitives</a>.</p><dl><dt>Function: <code>insert-before</code> <code>(parent new-node reference)</code></dt><dd>Insert NEW-NODE under PARENT before REFERENCE.</dd><dd>If REFERENCE is nil, insert NEW-NODE as last child of PARENT.
-Returns NEW-NODE.</dd><dt>Function: <code>append-child</code> <code>(parent new-node)</code></dt><dd>Insert NEW-NODE as last child of PARENT.</dd><dd>Returns NEW-NODE.</dd><dt>Function: <code>append-children</code> <code>(parent children)</code></dt><dd>Insert CHILDREN as last children of PARENT.</dd><dd>Returns CHILDREN.</dd><dt>Function: <code>remove-node</code> <code>(node)</code></dt><dd>Remove NODE from DOM tree.</dd></dl><h2 id="notes-on-dom-consistency">Notes on DOM consistency</h2><p>It is imperative that Lisp-side and renderer-side DOM are consistent. Otherwise, editing operations may behave erroneously and inconsistency can be propagated and amplified. All belts are off in such case (which can be recovered only by re-opening the buffer, or in some cases <code>revert-buffer</code>). </p><p>Normally, all programmer-facing editing operations (<a href="edit.html#editing-primitives">Editing primitives</a>) maintain consistency, under the assumption that the requested editing operations only ever result in <i>valid</i> HTML. If attempts are made to create invalid HTML, the renderer will usually perform &quot;fix-up&quot;s to restore the DOM to valid HTML, but currently Neomacs has no way to know about these. Note that creating invalid HTML then fix them in <code>with-post-command</code> (<a href="edit.html#editing-hooks">Editing hooks</a>) is <i>not</i> acceptable. Examples of operations that might shoot you in the foot:</p><ul><li operator="">Creating a <code>&lt;p&gt;</code> element inside another <code>&lt;p&gt;</code> element.</li><li>Creating a <code>&lt;li&gt;</code> element without surrounding <code>&lt;ol&gt;</code> or <code>&lt;ul&gt;</code> element.</li></ul><p>If you are using <a href="#low-level-dom-edits">Low-level DOM edits</a>, or debugging implementation of editing primitives, take care to enforce the following consistency rules:</p><dl><li operator="">Lisp-side and renderer-side DOM must have exactly the same structure, i.e. <code>element</code>'s and <code>text-node</code>'s must 1-1 correspond. Parent, child and sibling (order included) relations must be exactly the same.</li><li>Length of  corresponding text nodes must be exactly the same.</li><li>It is acceptable that corresponding elements have different tag-names.</li><li>It is acceptable that corresponding text nodes have different characters at the same offset.</li><li>It is acceptable that corresponding elements have different attribute values for an attribute named by a string on Lisp-side, but keep in mind that changes from Lisp-side will be pushed to renderer and overwrite its values.</li><li>It is totally ok that renderer-side elements have some attributes not known to Lisp-side. This is useful for internal bookkeeping done by JavaScript code which Lisp doesn't need to know. Lisp-side has similar ability by using attributes not named by strings.</li></dl>
-</body>
+ELEMENT as a single argument.</dd></dl><p>Attributes can have any name. Those named by strings are kept in sync with renderer-side attributes with the same names, i.e. changes in Lisp side are pushed to renderer (but not the other way). Those with non-string names (typically symbols) instead have no counterpart on renderer side.</p><p>Attribute related utility functions:</p><dl><dt>Function: <code>add-class</code> <code>(element . class)</code></dt><dd>Add CSS CLASS to ELEMENT.</dd><dt>Function: <code>remove-class</code> <code>(element . class)</code></dt><dd>Remove CSS CLASS from ELEMENT.</dd><dt>Function: <code>class-p</code> <code>(nodeclass&amp;rest . more-classes)</code></dt><dd>Test if NODE is an element of one of CSS CLASS or MORE-CLASSES.</dd></dl><h2 id="low-level-dom-edits"><p>Low-level DOM edits</p></h2><p>This section documents low-level primitives for modifying Lisp-side DOM. They are used to implement programmer-facing editing operations, see <a href="edit.html#editing-primitives">Editing primitives</a>.</p><dl><dt>Function: <code>insert-before</code> <code>(parentnew-node . reference)</code></dt><dd>Insert NEW-NODE under PARENT before REFERENCE.</dd><dd>If REFERENCE is nil, insert NEW-NODE as last child of PARENT.
+Returns NEW-NODE.</dd><dt>Function: <code>append-child</code> <code>(parent . new-node)</code></dt><dd>Insert NEW-NODE as last child of PARENT.</dd><dd>Returns NEW-NODE.</dd><dt>Function: <code>append-children</code> <code>(parent . children)</code></dt><dd>Insert CHILDREN as last children of PARENT.</dd><dd>Returns CHILDREN.</dd><dt>Function: <code>remove-node</code> <code>( . node)</code></dt><dd>Remove NODE from DOM tree.</dd></dl><h2 id="notes-on-dom-consistency">Notes on DOM consistency</h2><p>It is imperative that Lisp-side and renderer-side DOM are consistent. Otherwise, editing operations may behave erroneously and inconsistency can be propagated and amplified. All belts are off in such case (which can be recovered only by re-opening the buffer, or in some cases <code>revert-buffer</code>). </p><p>Normally, all programmer-facing editing operations (<a href="edit.html#editing-primitives">Editing primitives</a>) maintain consistency, under the assumption that the requested editing operations only ever result in <i>valid</i> HTML. If attempts are made to create invalid HTML, the renderer will usually perform &quot;fix-up&quot;s to restore the DOM to valid HTML, but currently Neomacs has no way to know about these. Note that creating invalid HTML then fix them in <code>with-post-command</code> (<a href="edit.html#editing-hooks">Editing hooks</a>) is <i>not</i> acceptable. Examples of operations that might shoot you in the foot:</p><ul><li operator="">Creating a <code>&lt;p&gt;</code> element inside another <code>&lt;p&gt;</code> element.</li><li>Creating a <code>&lt;li&gt;</code> element without surrounding <code>&lt;ol&gt;</code> or <code>&lt;ul&gt;</code> element.</li></ul><p>If you are using <a href="#low-level-dom-edits">Low-level DOM edits</a>, or debugging implementation of editing primitives, take care to enforce the following consistency rules:</p><dl><li>Lisp-side and renderer-side DOM must have exactly the same structure, i.e. <code>element</code>&#39;s and <code>text-node</code>&#39;s must 1-1 correspond. Parent, child and sibling (order included) relations must be exactly the same.</li><li>Length of  corresponding text nodes must be exactly the same.</li><li>It is acceptable that corresponding elements have different tag-names.</li><li>It is acceptable that corresponding text nodes have different characters at the same offset.</li><li>It is acceptable that corresponding elements have different attribute values for an attribute named by a string on Lisp-side, but keep in mind that changes from Lisp-side will be pushed to renderer and overwrite its values.</li><li>It is totally ok that renderer-side elements have some attributes not known to Lisp-side. This is useful for internal bookkeeping done by JavaScript code which Lisp doesn&#39;t need to know. Lisp-side has similar ability by using attributes not named by strings.</li></dl>
+</body></html>

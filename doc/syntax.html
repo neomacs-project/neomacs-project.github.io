@@ -1,9 +1,301 @@
-<body class="focus-tail"><h1 operator="" id="syntax">Syntax</h1><p>Living in a structural world is nice, but sometimes we need to convert structural content to/from plain text representation, e.g. for file I/O and system clipboard. Neomacs provides some low-level hooks and a table-driven parser framework for converting to/from plain text.</p><h2 id="(de)-serialization-functions">(De)-serialization functions</h2><p>Interface to parsers:</p><dl><dt>Variable: <code>*dom-output*</code></dt><dd>A DOM node to accumulate result of parsers.</dd><dt>Function: <code>read-dom</code> <code>(stream &amp;optional recursive-p)</code></dt><dd>Read and build DOM nodes from STREAM using <code>*syntax-table*</code>.</dd><dd>If RECURSIVE-P is t, the call is expected to be made from within some
+<!DOCTYPE html>
+<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+
+@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+
+@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.focus{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail::after{
+    content: " ";
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 0.4em;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.range-selection{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+code{
+    font-family: monospace;
+}
+
+:link{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.invisible{
+    display: none;
+}
+
+::highlight(neomacs){
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::highlight(neomacs-range){
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+#neomacs-cursor{
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}</style><style id="neomacs-style-DOC-MODE">body{
+    left: 0;
+    right: 0;
+    white-space: pre-wrap;
+    padding-left: 1em;
+}
+
+body.focus-tail::after{
+    content: "  ";
+    white-space: pre;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}</style><style id="neomacs-style-LISP-MODE">.symbol{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+}
+
+.symbol:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+
+
+.symbol:empty::after{
+    content: "_";
+}
+
+.symbol:empty:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.symbol:empty.focus-tail::after{
+    content: "_";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    color: #a997a0;
+}
+
+.string::before{
+    content: "\"";
+}
+
+.string::after{
+    content: "\"";
+}
+
+.string:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.string.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string.focus-tail::after{
+    content: "\"";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.object{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    text-decoration: underline;
+}
+
+.object:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.symbol[symbol-type="ghost"]{
+    margin-right: 0!important;
+}
+
+.symbol[symbol-type="macro"][operator]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="keyword"]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="special-operator"][operator]{
+    color: #d29fa8;
+}
+
+.list{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    padding-left: 0.4em;
+}
+
+.list::before{
+    content: "(";
+    margin-left: -0.4em;
+}
+
+.list::after{
+    content: ")";
+    vertical-align: bottom;
+}
+
+.list:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.list.focus-tail::after{
+    content: ")";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.comment{
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.comment::after{
+    content: "⁣";
+}
+
+.comment[comment-level="1"]{
+    position: sticky;
+    left: 20em;
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="2"]{
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]{
+    font-size: 1.2em;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+.comment[comment-level="4"]{
+    font-size: 1.1em;
+    color: #a997a0;
+}
+
+.comment[comment-level="4"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+[compiler-note-severity="note"]{
+    border: solid 1px rgba(169,151,160,1.0);
+}
+
+[compiler-note-severity="style-warning"]{
+    border: dashed 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="warning"]{
+    border: solid 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="error"]{
+    border: double 1px rgba(240,0,120,1.0);
+}</style><style id="neomacs-style-HTML-DOC-MODE">:empty::after{
+    content: "_";
+}
+
+li p{
+    margin: 0;
+}
+
+body{
+    white-space: normal;
+    max-width: 48rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.comma-expr::before{
+    content: ",";
+}
+
+.comma-expr{
+    border: solid 1px currentColor;
+}</style></head><body><h1 operator="" id="syntax">Syntax</h1><p>Living in a structural world is nice, but sometimes we need to convert structural content to/from plain text representation, e.g. for file I/O and system clipboard. Neomacs provides some low-level hooks and a table-driven parser framework for converting to/from plain text.</p><h2 id="(de)-serialization-functions">(De)-serialization functions</h2><p>Interface to parsers:</p><dl><dt>Variable: <code>*dom-output*</code></dt><dd>A DOM node to accumulate result of parsers.</dd><dt>Function: <code>read-dom</code> <code>(stream&amp;optional . recursive-p)</code></dt><dd>Read and build DOM nodes from STREAM using <code>*syntax-table*</code>.</dd><dd>If RECURSIVE-P is t, the call is expected to be made from within some
 function that has been itself called from <code>read-dom</code>, for example some
-function that is bound in <code>*syntax-table*</code>.</dd><dd>If <code>*dom-output*</code> is bound, append the results as children of <code>*dom-output*</code>. Otherwise, return the results as a list of DOM nodes.</dd><dt>Function: <code>read-dom-from-file</code> <code>(file)</code></dt><dd>Read and build DOM nodes from FILE using <code>*syntax-table*</code>.</dd><dd>Read continues until all FILE content is consumed.</dd><dd>If <code>*dom-output*</code> is bound, append the results as children of <code>*dom-output*</code>. Otherwise, return the results as a list of DOM nodes.</dd></dl><p>The following hooks implement actual (de)-serialization:</p><dl><dt>Standard generic function: <code>read-dom-aux</code> <code>(buffer stream)</code></dt><dd>Read and build DOM nodes from STREAM for BUFFER.</dd><dd>Resulting DOM nodes should be appended as children of
+function that is bound in <code>*syntax-table*</code>.</dd><dd>If <code>*dom-output*</code> is bound, append the results as children of <code>*dom-output*</code>. Otherwise, return the results as a list of DOM nodes.</dd><dt>Function: <code>read-dom-from-file</code> <code>( . file)</code></dt><dd>Read and build DOM nodes from FILE using <code>*syntax-table*</code>.</dd><dd>Read continues until all FILE content is consumed.</dd><dd>If <code>*dom-output*</code> is bound, append the results as children of <code>*dom-output*</code>. Otherwise, return the results as a list of DOM nodes.</dd></dl><p>The following hooks implement actual (de)-serialization:</p><dl><dt>Standard generic function: <code>read-dom-aux</code> <code>(buffer . stream)</code></dt><dd>Read and build DOM nodes from STREAM for BUFFER.</dd><dd>Resulting DOM nodes should be appended as children of
 <code>*dom-output*</code>. Reading can stop at whatever boundary that makes
-sense, i.e. multiple children can be built and appended.</dd><dt>Standard generic function: <code>write-dom-aux</code> <code>(buffer node stream)</code></dt><dd>Serialize DOM NODE to STREAM for BUFFER.</dd><dd>The result should be able to be read back with <code>read-dom-aux</code>.</dd></dl><p>Note that parsers <code>use append-child</code> to append children to <code>*dom-output*</code> directly, i.e. they use <a href="dom.html#low-level-dom-edits">low-level DOM edits</a> instead of <a href="edit.html#editing-primitives">editing-primitives</a>. It is therefore important to never bind <code>*dom-output*</code> to live DOM nodes in any buffer, which would result in corrupted state (<a href="dom.html#notes-on-dom-consistency">inconsistency</a> between Lisp-side and renderer-side DOM). Typically, one wants to call the parser to build DOM nodes outside any buffer, then use <code>insert-nodes</code> to insert them into some buffer if needed.</p><h2 id="table-driver-parser">Table-driver parser</h2><p>Neomacs provides a parser framework driven by <i>syntax-tables</i>, which binds characters to functions that consume some (more) characters and builds DOM nodes. The parser reads a character from input stream, looks it up in <code>*syntax-table*</code>, and calls the function with two arguments: the stream and the character. If the character is not bound to any function, the special value <code>t</code> is looked up in <code>*syntax-table*</code> next, and the function (if any) bound to <code>t</code> is used as default. If <code>t</code> does not have binding either, an error is signaled.</p><dl><dt>Function, setf-able: <code>get-syntax-table</code> <code>(char table)</code></dt><dd>Get function bound to CHAR in TABLE.</dd><dt>Function: <code>set-syntax-range</code> <code>(table beg end symbol)</code></dt><dd>Bind characters between char-code BEG and END in TABLE to SYMBOL.</dd><dt>Function: <code>make-syntax-table</code> <code>(&amp;rest bindings)</code></dt><dd>Make a syntax table using BINDINGS.</dd><dt>Variable: <code>*syntax-table*</code></dt><dd>The syntax table currently in effect.</dd></dl><p>It's quite common to read consecutive characters of the same &quot;category&quot; as a string and process as a whole, possibly building a DOM element or inserting as text. The following functions help with such cases:</p><dl><dt>Function: <code>read-constituent</code> <code>(stream symbol escape-chars)</code></dt><dd>Read consecutive characters from STREAM and return as string.</dd><dd>Read stops when a character not bound to SYMBOL in <code>*syntax-table*</code> is
+sense, i.e. multiple children can be built and appended.</dd><dt>Standard generic function: <code>write-dom-aux</code> <code>(buffernode . stream)</code></dt><dd>Serialize DOM NODE to STREAM for BUFFER.</dd><dd>The result should be able to be read back with <code>read-dom-aux</code>.</dd></dl><p>Note that parsers <code>use append-child</code> to append children to <code>*dom-output*</code> directly, i.e. they use <a href="dom.html#low-level-dom-edits">low-level DOM edits</a> instead of <a href="edit.html#editing-primitives">editing-primitives</a>. It is therefore important to never bind <code>*dom-output*</code> to live DOM nodes in any buffer, which would result in corrupted state (<a href="dom.html#notes-on-dom-consistency">inconsistency</a> between Lisp-side and renderer-side DOM). Typically, one wants to call the parser to build DOM nodes outside any buffer, then use <code>insert-nodes</code> to insert them into some buffer if needed.</p><h2 id="table-driver-parser">Table-driver parser</h2><p>Neomacs provides a parser framework driven by <i>syntax-tables</i>, which binds characters to functions that consume some (more) characters and builds DOM nodes. The parser reads a character from input stream, looks it up in <code>*syntax-table*</code>, and calls the function with two arguments: the stream and the character. If the character is not bound to any function, the special value <code>t</code> is looked up in <code>*syntax-table*</code> next, and the function (if any) bound to <code>t</code> is used as default. If <code>t</code> does not have binding either, an error is signaled.</p><dl><dt>Function, setf-able: <code>get-syntax-table</code> <code>(char . table)</code></dt><dd>Get function bound to CHAR in TABLE.</dd><dt>Function: <code>set-syntax-range</code> <code>(tablebegend . symbol)</code></dt><dd>Bind characters between char-code BEG and END in TABLE to SYMBOL.</dd><dt>Function: <code>make-syntax-table</code> <code>(&amp;rest . bindings)</code></dt><dd>Make a syntax table using BINDINGS.</dd><dt>Variable: <code>*syntax-table*</code></dt><dd>The syntax table currently in effect.</dd></dl><p>It&#39;s quite common to read consecutive characters of the same &quot;category&quot; as a string and process as a whole, possibly building a DOM element or inserting as text. The following functions help with such cases:</p><dl><dt>Function: <code>read-constituent</code> <code>(streamsymbol . escape-chars)</code></dt><dd>Read consecutive characters from STREAM and return as string.</dd><dd>Read stops when a character not bound to SYMBOL in <code>*syntax-table*</code> is
 encountered, with one exception: a character in the list ESCAPE-CHARS
-makes the next character accepted unconditionally.</dd><dt>Function: <code>append-text</code> <code>(parent string)</code></dt><dd>Append STRING as a text node to PARENT.</dd><dd>If PARENT already has a text node as <code>last-child</code>, concat into the
-text node instead.</dd></dl><dl><dt operator="">Some functions suitable for binding to in syntax tables:</dt></dl><dl><dt>Function: <code>read-newline</code> <code>(stream c)</code></dt><dd>Append a new line node (br element) to <code>*dom-output*</code>.</dd><dt>Function: <code>read-text</code> <code>(stream c)</code></dt><dd>Read consecutive characters and append as text node to <code>*dom-output*</code>.</dd><dt>Function: <code>read-ignore</code> <code>(stream c)</code></dt><dd>Does nothing.</dd></dl>
-</body>
+makes the next character accepted unconditionally.</dd><dt>Function: <code>append-text</code> <code>(parent . string)</code></dt><dd>Append STRING as a text node to PARENT.</dd><dd>If PARENT already has a text node as <code>last-child</code>, concat into the
+text node instead.</dd></dl><dl><dt operator="">Some functions suitable for binding to in syntax tables:</dt></dl><dl><dt>Function: <code>read-newline</code> <code>(stream . c)</code></dt><dd>Append a new line node (br element) to <code>*dom-output*</code>.</dd><dt>Function: <code>read-text</code> <code>(stream . c)</code></dt><dd>Read consecutive characters and append as text node to <code>*dom-output*</code>.</dd><dt>Function: <code>read-ignore</code> <code>(stream . c)</code></dt><dd>Does nothing.</dd></dl>
+</body></html>

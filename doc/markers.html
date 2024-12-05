@@ -1,6 +1,298 @@
-<body class="focus-tail"><h1 operator="" id="markers">Markers</h1><p>A marker maintains a position in the buffer, which stays valid across arbitary editing operations. A marker's position can be get and set using <code>pos</code>.</p><dl><dt>Class: <code>marker</code> inherits <code>(standard-object)</code></dt><dd><dl><dt>Slot: <code>pos</code></dt></dl></dd><dt>Macro: <code>with-marker</code> <code>((marker marker-or-pos &amp;optional (advance-p t)) &amp;body body)</code></dt><dd>Make a temporary marker at MARKER-OR-POS and bind to MARKER during BODY.</dd></dl><h2 id="marker-advance-types">Marker advance types</h2><p>When an insertion happens at a marker, the marker may get pushed after the inserted contents (it <i>advances</i>), or stay before the inserted contents (it does not advance). This property can be queried and set using:</p><dl><dt>Function, setf-able: <code>advance-p</code> <code>(marker)</code></dt><dd>Returns t if MARKER advances, nil otherwise.</dd><dd>This place is setf-able.</dd></dl>
-<h2 id="marker-ring">Marker ring</h2><p>Neomacs has a global marker ring. Various commands which move between buffer (e.g. <code>goto-definition</code>) save current focused positions onto the global marker ring before moving, so that you can revisit them later.</p><dl><dt>Function: <code>push-global-marker</code> <code>(&amp;optional (marker (copy-marker (focus))))</code></dt><dd>Push MARKER onto the global marker ring.</dd><dd>If <code>*marker-ring-index*</code> is not 0 when this function is called, that
+<!DOCTYPE html>
+<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+
+@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+
+@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.focus{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail::after{
+    content: " ";
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 0.4em;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.range-selection{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+code{
+    font-family: monospace;
+}
+
+:link{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.invisible{
+    display: none;
+}
+
+::highlight(neomacs){
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::highlight(neomacs-range){
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+#neomacs-cursor{
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}</style><style id="neomacs-style-DOC-MODE">body{
+    left: 0;
+    right: 0;
+    white-space: pre-wrap;
+    padding-left: 1em;
+}
+
+body.focus-tail::after{
+    content: "  ";
+    white-space: pre;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}</style><style id="neomacs-style-LISP-MODE">.symbol{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+}
+
+.symbol:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+
+
+.symbol:empty::after{
+    content: "_";
+}
+
+.symbol:empty:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.symbol:empty.focus-tail::after{
+    content: "_";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    color: #a997a0;
+}
+
+.string::before{
+    content: "\"";
+}
+
+.string::after{
+    content: "\"";
+}
+
+.string:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.string.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string.focus-tail::after{
+    content: "\"";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.object{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    text-decoration: underline;
+}
+
+.object:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.symbol[symbol-type="ghost"]{
+    margin-right: 0!important;
+}
+
+.symbol[symbol-type="macro"][operator]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="keyword"]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="special-operator"][operator]{
+    color: #d29fa8;
+}
+
+.list{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    padding-left: 0.4em;
+}
+
+.list::before{
+    content: "(";
+    margin-left: -0.4em;
+}
+
+.list::after{
+    content: ")";
+    vertical-align: bottom;
+}
+
+.list:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.list.focus-tail::after{
+    content: ")";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.comment{
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.comment::after{
+    content: "⁣";
+}
+
+.comment[comment-level="1"]{
+    position: sticky;
+    left: 20em;
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="2"]{
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]{
+    font-size: 1.2em;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+.comment[comment-level="4"]{
+    font-size: 1.1em;
+    color: #a997a0;
+}
+
+.comment[comment-level="4"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+[compiler-note-severity="note"]{
+    border: solid 1px rgba(169,151,160,1.0);
+}
+
+[compiler-note-severity="style-warning"]{
+    border: dashed 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="warning"]{
+    border: solid 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="error"]{
+    border: double 1px rgba(240,0,120,1.0);
+}</style><style id="neomacs-style-HTML-DOC-MODE">:empty::after{
+    content: "_";
+}
+
+li p{
+    margin: 0;
+}
+
+body{
+    white-space: normal;
+    max-width: 48rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.comma-expr::before{
+    content: ",";
+}
+
+.comma-expr{
+    border: solid 1px currentColor;
+}</style></head><body><h1 operator="" id="markers">Markers</h1><p>A marker maintains a position in the buffer, which stays valid across arbitary editing operations. A marker&#39;s position can be get and set using <code>pos</code>.</p><dl><dt>Class: <code>marker</code> inherits <code>( . standard-object)</code></dt><dd><dl><dt>Slot: <code>pos</code></dt></dl></dd><dt>Macro: <code>with-marker</code> <code>((marker marker-or-pos &amp;optional (advance-p t))&amp;body . body)</code></dt><dd>Make a temporary marker at MARKER-OR-POS and bind to MARKER during BODY.</dd></dl><h2 id="marker-advance-types">Marker advance types</h2><p>When an insertion happens at a marker, the marker may get pushed after the inserted contents (it <i>advances</i>), or stay before the inserted contents (it does not advance). This property can be queried and set using:</p><dl><dt>Function, setf-able: <code>advance-p</code> <code>( . marker)</code></dt><dd>Returns t if MARKER advances, nil otherwise.</dd><dd>This place is setf-able.</dd></dl>
+<h2 id="marker-ring">Marker ring</h2><p>Neomacs has a global marker ring. Various commands which move between buffer (e.g. <code>goto-definition</code>) save current focused positions onto the global marker ring before moving, so that you can revisit them later.</p><dl><dt>Function: <code>push-global-marker</code> <code>(&amp;optional . (marker (copy-marker (focus))))</code></dt><dd>Push MARKER onto the global marker ring.</dd><dd>If <code>*marker-ring-index*</code> is not 0 when this function is called, that
 many markers are deleted from the top of the marker ring (i.e. if
 there were <code>pop-global-marker</code> invocations, the popped markers are
 truly lost).</dd><dd>Mark ring commands will delete MARKER if they no longer use it, so it
-is your responsible to copy the marker if you still need it later.</dd><dt>Command (<code>M-,</code>): <code>pop-global-marker</code> <code>()</code></dt><dd>Pop a marker off the global marker ring and goto its position.</dd><dt>Command (<code>C-M-,</code>): <code>unpop-global-marker</code> <code>()</code></dt><dd>Undo the effect of previous <code>pop-global-mark</code>.</dd><dt>Variable: <code>*marker-ring*</code></dt><dt>Variable: <code>*marker-ring-index*</code></dt><dd>Index of the marker to be popped by next <code>pop-global-marker</code>.</dd></dl></body>
+is your responsible to copy the marker if you still need it later.</dd><dt>Command (<code>M-,</code>): <code>pop-global-marker</code> <code>( nil)</code></dt><dd>Pop a marker off the global marker ring and goto its position.</dd><dt>Command (<code>C-M-,</code>): <code>unpop-global-marker</code> <code>( nil)</code></dt><dd>Undo the effect of previous <code>pop-global-mark</code>.</dd><dt>Variable: <code>*marker-ring*</code></dt><dt>Variable: <code>*marker-ring-index*</code></dt><dd>Index of the marker to be popped by next <code>pop-global-marker</code>.</dd></dl></body></html>

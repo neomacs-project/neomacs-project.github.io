@@ -1,12 +1,304 @@
-<body class="focus-tail"><h1 operator="" id="ranges">Ranges</h1><h2 id="create-and-query-ranges">Create and query ranges</h2><dl><dt>Function: <code>range</code> <code>(beg end)</code></dt><dd>Create a range between BEG and END.</dd><dd>This normalizes <code>range-beg</code> and <code>range-end</code>, i.e. if END is before
-BEG, they are swapped.</dd><dt>Function: <code>range-collapsed-p</code> <code>(range)</code></dt><dd>Test if RANGE is collapsed (<code>range-beg</code> and <code>range-end</code> are the same).</dd><dt>Function: <code>inside-range-p</code> <code>(marker-or-pos range)</code></dt><dd>Test if MARKER-OR-POS is inside RANGE.</dd><dt>Function: <code>inside-range-inclusive-p</code> <code>(marker-or-pos range)</code></dt><dd>Test if MARKER-OR-POS is inside RANGE, including range-end.</dd></dl><h2 id="range-editing-primitives">Range editing primitives</h2><dl><dt>Function: <code>extract-range</code> <code>(range)</code></dt><dd>Extract contents inside RANGE.
+<!DOCTYPE html>
+<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+
+@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+
+@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.focus{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail::after{
+    content: " ";
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 0.4em;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.range-selection{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+code{
+    font-family: monospace;
+}
+
+:link{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.invisible{
+    display: none;
+}
+
+::highlight(neomacs){
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::highlight(neomacs-range){
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+#neomacs-cursor{
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}</style><style id="neomacs-style-DOC-MODE">body{
+    left: 0;
+    right: 0;
+    white-space: pre-wrap;
+    padding-left: 1em;
+}
+
+body.focus-tail::after{
+    content: "  ";
+    white-space: pre;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}</style><style id="neomacs-style-LISP-MODE">.symbol{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+}
+
+.symbol:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+
+
+.symbol:empty::after{
+    content: "_";
+}
+
+.symbol:empty:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.symbol:empty.focus-tail::after{
+    content: "_";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    color: #a997a0;
+}
+
+.string::before{
+    content: "\"";
+}
+
+.string::after{
+    content: "\"";
+}
+
+.string:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.string.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string.focus-tail::after{
+    content: "\"";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.object{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    text-decoration: underline;
+}
+
+.object:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.symbol[symbol-type="ghost"]{
+    margin-right: 0!important;
+}
+
+.symbol[symbol-type="macro"][operator]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="keyword"]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="special-operator"][operator]{
+    color: #d29fa8;
+}
+
+.list{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    padding-left: 0.4em;
+}
+
+.list::before{
+    content: "(";
+    margin-left: -0.4em;
+}
+
+.list::after{
+    content: ")";
+    vertical-align: bottom;
+}
+
+.list:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.list.focus-tail::after{
+    content: ")";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.comment{
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.comment::after{
+    content: "⁣";
+}
+
+.comment[comment-level="1"]{
+    position: sticky;
+    left: 20em;
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="2"]{
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]{
+    font-size: 1.2em;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+.comment[comment-level="4"]{
+    font-size: 1.1em;
+    color: #a997a0;
+}
+
+.comment[comment-level="4"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+[compiler-note-severity="note"]{
+    border: solid 1px rgba(169,151,160,1.0);
+}
+
+[compiler-note-severity="style-warning"]{
+    border: dashed 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="warning"]{
+    border: solid 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="error"]{
+    border: double 1px rgba(240,0,120,1.0);
+}</style><style id="neomacs-style-HTML-DOC-MODE">:empty::after{
+    content: "_";
+}
+
+li p{
+    margin: 0;
+}
+
+body{
+    white-space: normal;
+    max-width: 48rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.comma-expr::before{
+    content: ",";
+}
+
+.comma-expr{
+    border: solid 1px currentColor;
+}</style></head><body><h1 operator="" id="ranges">Ranges</h1><h2 id="create-and-query-ranges">Create and query ranges</h2><dl><dt>Function: <code>range</code> <code>(beg . end)</code></dt><dd>Create a range between BEG and END.</dd><dd>This normalizes <code>range-beg</code> and <code>range-end</code>, i.e. if END is before
+BEG, they are swapped.</dd><dt>Function: <code>range-collapsed-p</code> <code>( . range)</code></dt><dd>Test if RANGE is collapsed (<code>range-beg</code> and <code>range-end</code> are the same).</dd><dt>Function: <code>inside-range-p</code> <code>(marker-or-pos . range)</code></dt><dd>Test if MARKER-OR-POS is inside RANGE.</dd><dt>Function: <code>inside-range-inclusive-p</code> <code>(marker-or-pos . range)</code></dt><dd>Test if MARKER-OR-POS is inside RANGE, including range-end.</dd></dl><h2 id="range-editing-primitives">Range editing primitives</h2><dl><dt>Function: <code>extract-range</code> <code>( . range)</code></dt><dd>Extract contents inside RANGE.
 This may extract part of a node, examples (^ marks <code>range-beg</code> and
 _ marks <code>range-end</code>):
 DOM before =&gt; DOM after, returned nodes
 ((a^ b) c (d _e)) =&gt; ((a)(e)), ( b) c (d )
-^(a (b _c) d) =&gt; ((c) d), (a (b ))</dd><dt>Function: <code>delete-range</code> <code>(range)</code></dt><dd>Delete contents inside RANGE.
+^(a (b _c) d) =&gt; ((c) d), (a (b ))</dd><dt>Function: <code>delete-range</code> <code>( . range)</code></dt><dd>Delete contents inside RANGE.
 This may delete part of a node, examples (^ marks <code>range-beg</code> and
 _ marks <code>range-end</code>):
 DOM before =&gt; DOM after
 ((a^ b) c (d _e)) =&gt; ((a)(e))
-^(a (b _c) d) =&gt; ((c) d)</dd></dl></body>
+^(a (b _c) d) =&gt; ((c) d)</dd></dl></body></html>

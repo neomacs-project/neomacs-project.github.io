@@ -1,11 +1,311 @@
-<body class="focus-tail"><h1 operator="" id="command-loop">Command Loop</h1><dl><dt>Function: <code>start-command-loop</code> <code>()</code></dt><dd>Start Neomacs command loop.</dd><dd>If a command loop is already running, ask and wait for it to quit
+<!DOCTYPE html>
+<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+
+@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+
+@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.focus{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail::after{
+    content: " ";
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 0.4em;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.range-selection{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+code{
+    font-family: monospace;
+}
+
+:link{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.invisible{
+    display: none;
+}
+
+::highlight(neomacs){
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::highlight(neomacs-range){
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+#neomacs-cursor{
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}</style><style id="neomacs-style-DOC-MODE">body{
+    left: 0;
+    right: 0;
+    white-space: pre-wrap;
+    padding-left: 1em;
+}
+
+body.focus-tail::after{
+    content: "  ";
+    white-space: pre;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}</style><style id="neomacs-style-LISP-MODE">.symbol{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+}
+
+.symbol:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+
+
+.symbol:empty::after{
+    content: "_";
+}
+
+.symbol:empty:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.symbol:empty.focus-tail::after{
+    content: "_";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    color: #a997a0;
+}
+
+.string::before{
+    content: "\"";
+}
+
+.string::after{
+    content: "\"";
+}
+
+.string:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.string.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string.focus-tail::after{
+    content: "\"";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.object{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    text-decoration: underline;
+}
+
+.object:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.symbol[symbol-type="ghost"]{
+    margin-right: 0!important;
+}
+
+.symbol[symbol-type="macro"][operator]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="keyword"]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="special-operator"][operator]{
+    color: #d29fa8;
+}
+
+.list{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    padding-left: 0.4em;
+}
+
+.list::before{
+    content: "(";
+    margin-left: -0.4em;
+}
+
+.list::after{
+    content: ")";
+    vertical-align: bottom;
+}
+
+.list:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.list.focus-tail::after{
+    content: ")";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.comment{
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.comment::after{
+    content: "⁣";
+}
+
+.comment[comment-level="1"]{
+    position: sticky;
+    left: 20em;
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="2"]{
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]{
+    font-size: 1.2em;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+.comment[comment-level="4"]{
+    font-size: 1.1em;
+    color: #a997a0;
+}
+
+.comment[comment-level="4"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+[compiler-note-severity="note"]{
+    border: solid 1px rgba(169,151,160,1.0);
+}
+
+[compiler-note-severity="style-warning"]{
+    border: dashed 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="warning"]{
+    border: solid 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="error"]{
+    border: double 1px rgba(240,0,120,1.0);
+}</style><style id="neomacs-style-HTML-DOC-MODE">:empty::after{
+    content: "_";
+}
+
+li p{
+    margin: 0;
+}
+
+body{
+    white-space: normal;
+    max-width: 48rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.comma-expr::before{
+    content: ",";
+}
+
+.comma-expr{
+    border: solid 1px currentColor;
+}</style></head><body><h1 operator="" id="command-loop">Command Loop</h1><dl><dt>Function: <code>start-command-loop</code> <code>( nil)</code></dt><dd>Start Neomacs command loop.</dd><dd>If a command loop is already running, ask and wait for it to quit
 before starting a new one. This is useful when you want changes to the
 function <code>command-loop</code> to take effect.</dd></dl><h2 id="command-dispatch">Command dispatch</h2><dl><dt>Variable: <code>*this-command*</code></dt><dd>Current command run by command loop.</dd><dd>The value is bound to nil outside command invocation made by command
 loop.</dd><dt>Variable: <code>*this-command-keys*</code></dt><dd>List of keys that cause current command to run.</dd><dd>The value is bound to nil outside command invocation made by command
-loop.</dd><dt>Variable: <code>*last-command*</code></dt><dd>Last command run by command loop.</dd></dl><h2 id="buffer-transactions">Buffer transactions</h2><p>Neomacs commands are processed in a transactional manner, following  the 2PL (2-phase locking) model. During a command invocation, every <code>with-current-buffer</code> form obtains a lock for the buffer. All buffer locks are released at the end of command invocation. <code>on-pre-command</code> is run when the buffer lock is obtained for the first time and <code>on-post-command</code> is run when the buffer lock is released. When <code>with-current-buffer</code> runs outside any command invocation, it effectively starts a new command invocation for running its body and will run <code>on-pre-command</code> and <code>on-post-command</code> like normal command invocations. It's important to note the interaction between <code>with-current-buffer</code> and transactions.</p><dl><dt>Macro: <code>with-current-buffer</code> <code>(buffer &amp;body body)</code></dt><dd>Run BODY with BUFFER as the current buffer.</dd><dt>Progn generic function: <code>on-pre-command</code> <code>(buffer)</code></dt><dd>Run before command invocation.</dd><dd>More specifically, this runs before entering the first
-<code>with-current-buffer</code> form for BUFFER during a command invocation.</dd><dt>Progn generic function: <code>on-post-command</code> <code>(buffer)</code></dt><dd>Run after command invocation.</dd><dd>More specifically, this runs after a command invocation iff it has
+loop.</dd><dt>Variable: <code>*last-command*</code></dt><dd>Last command run by command loop.</dd></dl><h2 id="buffer-transactions">Buffer transactions</h2><p>Neomacs commands are processed in a transactional manner, following  the 2PL (2-phase locking) model. During a command invocation, every <code>with-current-buffer</code> form obtains a lock for the buffer. All buffer locks are released at the end of command invocation. <code>on-pre-command</code> is run when the buffer lock is obtained for the first time and <code>on-post-command</code> is run when the buffer lock is released. When <code>with-current-buffer</code> runs outside any command invocation, it effectively starts a new command invocation for running its body and will run <code>on-pre-command</code> and <code>on-post-command</code> like normal command invocations. It&#39;s important to note the interaction between <code>with-current-buffer</code> and transactions.</p><dl><dt>Macro: <code>with-current-buffer</code> <code>(buffer&amp;body . body)</code></dt><dd>Run BODY with BUFFER as the current buffer.</dd><dt>Progn generic function: <code>on-pre-command</code> <code>( . buffer)</code></dt><dd>Run before command invocation.</dd><dd>More specifically, this runs before entering the first
+<code>with-current-buffer</code> form for BUFFER during a command invocation.</dd><dt>Progn generic function: <code>on-post-command</code> <code>( . buffer)</code></dt><dd>Run after command invocation.</dd><dd>More specifically, this runs after a command invocation iff it has
 ever entered any <code>with-current-buffer</code> form for BUFFER during its
-execution.</dd></dl><h2 id="condition-handling">Condition handling</h2><p>Normally, Neomacs command loop handles any error conditions that reach it. It runs approriate hook, logs a message, then continue processing the next command.</p><dl><dt>Variable: <code>*quit-hook*</code></dt><dd>Invoked when a quit condition reaches command loop.</dd><dd><code>user-error</code>s are considered quits and also trigger this hook.</dd><dt>Variable: <code>*error-hook*</code></dt><dd>Invoked when an error condition reaches command loop.</dd><dd><code>user-error</code>s are considered quits and does not trigger this hook.</dd></dl><p>It is also possible to ask the command loop to invoke the debugger instead of handling error conditions.</p><dl><dt>Variable: <code>*debug-on-error*</code></dt><dt>Command: <code>toggle-debug-on-error</code> <code>()</code></dt></dl><dl><dt>Class: <code>user-error</code> inherits <code>(error)</code></dt><dd>A user generated error.</dd><dd>This is normally treated the same as a <code>quit</code> condition and does not
-drop into Neomacs debugger.</dd><dt>Function: <code>user-error</code> <code>(control-string &amp;rest format-arguments)</code></dt><dd>Signal a <code>simple-user-error</code> with messages formatted from
-CONTROL-STRING and FORMAT-ARGUMENT.</dd><dt>Macro: <code>with-demoted-errors</code> <code>(prompt &amp;body body)</code></dt><dd>Run BODY and demote any error to simple messages.
-Error messages are prepended with PROMPT.</dd><dd>If <code>*debug-on-error*</code> is t, run BODY without catching its errors.</dd></dl></body>
+execution.</dd></dl><h2 id="condition-handling">Condition handling</h2><p>Normally, Neomacs command loop handles any error conditions that reach it. It runs approriate hook, logs a message, then continue processing the next command.</p><dl><dt>Variable: <code>*quit-hook*</code></dt><dd>Invoked when a quit condition reaches command loop.</dd><dd><code>user-error</code>s are considered quits and also trigger this hook.</dd><dt>Variable: <code>*error-hook*</code></dt><dd>Invoked when an error condition reaches command loop.</dd><dd><code>user-error</code>s are considered quits and does not trigger this hook.</dd></dl><p>It is also possible to ask the command loop to invoke the debugger instead of handling error conditions.</p><dl><dt>Variable: <code>*debug-on-error*</code></dt><dt>Command: <code>toggle-debug-on-error</code> <code>( nil)</code></dt></dl><dl><dt>Class: <code>user-error</code> inherits <code>( . error)</code></dt><dd>A user generated error.</dd><dd>This is normally treated the same as a <code>quit</code> condition and does not
+drop into Neomacs debugger.</dd><dt>Function: <code>user-error</code> <code>(control-string&amp;rest . format-arguments)</code></dt><dd>Signal a <code>simple-user-error</code> with messages formatted from
+CONTROL-STRING and FORMAT-ARGUMENT.</dd><dt>Macro: <code>with-demoted-errors</code> <code>(prompt&amp;body . body)</code></dt><dd>Run BODY and demote any error to simple messages.
+Error messages are prepended with PROMPT.</dd><dd>If <code>*debug-on-error*</code> is t, run BODY without catching its errors.</dd></dl><h2 id="defining-commands">Defining commands</h2><dl><dt>Macro: <code>define-command</code> <code>(name&amp;rest . args)</code></dt><dd>Define a command with NAME.</dd><dd>ARGS has the form <code>{:option OPTION}* LAMBDA-LIST FORM*</code>.  This is
+like <code>(defun LAMBDA-LIST FORM*)</code> besides supporting extra options:</dd><dd>:mode MODE-OR-MODES: The command is made avaliable in
+MODE-OR-MODES. MODE-OR-MODES can either be a list or a single
+symbol. If this options is not provided, the command is avaliable
+globally.</dd><dd>:interactive INTERACTIVE: INTERACTIVE should evaluate to a function
+which takes zero arguments. When called, it should return a list of
+arguments which can be supplied to the command. The command loop and
+<code>call-interactive</code> call this function to compute arguments for the
+command.</dd></dl></body></html>

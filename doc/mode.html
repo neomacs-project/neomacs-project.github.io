@@ -1,7 +1,299 @@
-<body class="focus-tail"><h1 class="" operator="" id="modes">Modes</h1><p>Neomacs use modes to provide functionalities to buffers. Neomacs modes are <i>mixins</i>, i.e. CLOS classes that can be dynamically added to buffers. A Neomacs buffer always inherit from zero or more modes and the <code>buffer</code> class.</p><dl><dt>Class: <code>mode</code> inherits <code>(standard-class)</code></dt><dd>Metaclass for modes.</dd><dd><dl><dt>Slot: <code>commands</code></dt><dt>Slot: <code>keymap</code></dt><dt>Slot: <code>lighter</code><dd>String displayed in header to indicate this mode is enabled.</dd></dt><dt>Slot: <code>hooks</code><dd>Other modes to enable or disable when enable or disabling this mode.</dd></dt></dl></dd></dl><p>Mixins mostly supersede buffer-local variables and hooks used in previous editors like Emacs and Hemlock. Modes can have slots, which are introduced to the buffers that enable them. Methods that specialize on a mode customize behavior of generic functions on buffers. Many generic functions (e.g. <code>on-*</code>) in Neomacs has a buffer as the first argument, which is suitable for specializing on modes. Many ordinary functions in Neomacs has a backing generic function which has a buffer as first argument, usually with name <code>*-aux</code>.</p><h2 id="toggling-modes">Toggling modes</h2><dl><dt>Function: <code>enable</code> <code>(mode-name)</code></dt><dd>Enable the mode named by MODE-NAME in current buffer.</dd><dt>Function: <code>disable</code> <code>(mode-name)</code></dt><dd>Disable the mode named by MODE-NAME in current buffer.</dd><dd>This also disables any modes that has MODE-NAME as super-mode.</dd><dt>Function: <code>toggle</code> <code>(mode-name)</code></dt><dd>Toggle the mode named by MODE-NAME in current buffer.</dd><dd>This disables MODE-NAME either if it is enabled directly or via
+<!DOCTYPE html>
+<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+
+@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+
+@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.focus{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail::after{
+    content: " ";
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 0.4em;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.range-selection{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+code{
+    font-family: monospace;
+}
+
+:link{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.invisible{
+    display: none;
+}
+
+::highlight(neomacs){
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::highlight(neomacs-range){
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+#neomacs-cursor{
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}</style><style id="neomacs-style-DOC-MODE">body{
+    left: 0;
+    right: 0;
+    white-space: pre-wrap;
+    padding-left: 1em;
+}
+
+body.focus-tail::after{
+    content: "  ";
+    white-space: pre;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}</style><style id="neomacs-style-LISP-MODE">.symbol{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+}
+
+.symbol:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+
+
+.symbol:empty::after{
+    content: "_";
+}
+
+.symbol:empty:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.symbol:empty.focus-tail::after{
+    content: "_";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    color: #a997a0;
+}
+
+.string::before{
+    content: "\"";
+}
+
+.string::after{
+    content: "\"";
+}
+
+.string:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.string.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string.focus-tail::after{
+    content: "\"";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.object{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    text-decoration: underline;
+}
+
+.object:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.symbol[symbol-type="ghost"]{
+    margin-right: 0!important;
+}
+
+.symbol[symbol-type="macro"][operator]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="keyword"]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="special-operator"][operator]{
+    color: #d29fa8;
+}
+
+.list{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    padding-left: 0.4em;
+}
+
+.list::before{
+    content: "(";
+    margin-left: -0.4em;
+}
+
+.list::after{
+    content: ")";
+    vertical-align: bottom;
+}
+
+.list:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.list.focus-tail::after{
+    content: ")";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.comment{
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.comment::after{
+    content: "⁣";
+}
+
+.comment[comment-level="1"]{
+    position: sticky;
+    left: 20em;
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="2"]{
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]{
+    font-size: 1.2em;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+.comment[comment-level="4"]{
+    font-size: 1.1em;
+    color: #a997a0;
+}
+
+.comment[comment-level="4"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+[compiler-note-severity="note"]{
+    border: solid 1px rgba(169,151,160,1.0);
+}
+
+[compiler-note-severity="style-warning"]{
+    border: dashed 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="warning"]{
+    border: solid 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="error"]{
+    border: double 1px rgba(240,0,120,1.0);
+}</style><style id="neomacs-style-HTML-DOC-MODE">:empty::after{
+    content: "_";
+}
+
+li p{
+    margin: 0;
+}
+
+body{
+    white-space: normal;
+    max-width: 48rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.comma-expr::before{
+    content: ",";
+}
+
+.comma-expr{
+    border: solid 1px currentColor;
+}</style></head><body><h1 class="" id="modes">Modes</h1><p>Neomacs use modes to provide functionalities to buffers. Neomacs modes are <i>mixins</i>, i.e. CLOS classes that can be dynamically added to buffers. A Neomacs buffer always inherit from zero or more modes and the <code>buffer</code> class.</p><dl><dt>Class: <code>mode</code> inherits <code>( . defaultable-class)</code></dt><dd>Metaclass for modes.</dd><dd><dl><dt>Slot: <code>commands</code></dt><dt>Slot: <code>keymap</code></dt><dt>Slot: <code>lighter</code><dd>String displayed in header to indicate this mode is enabled.</dd></dt><dt>Slot: <code>hooks</code><dd>Other modes to enable or disable when enable or disabling this mode.</dd></dt></dl></dd></dl><p>Mixins mostly supersede buffer-local variables and hooks used in previous editors like Emacs and Hemlock. Modes can have slots, which are introduced to the buffers that enable them. Methods that specialize on a mode customize behavior of generic functions on buffers. Many generic functions (e.g. <code>on-*</code>) in Neomacs has a buffer as the first argument, which is suitable for specializing on modes. Many ordinary functions in Neomacs has a backing generic function which has a buffer as first argument, usually with name <code>*-aux</code>.</p><h2 id="toggling-modes">Toggling modes</h2><dl><dt>Function: <code>enable</code> <code>( . mode-name)</code></dt><dd>Enable the mode named by MODE-NAME in current buffer.</dd><dt>Function: <code>disable</code> <code>( . mode-name)</code></dt><dd>Disable the mode named by MODE-NAME in current buffer.</dd><dd>This also disables any modes that has MODE-NAME as super-mode.</dd><dt>Function: <code>toggle</code> <code>( . mode-name)</code></dt><dd>Toggle the mode named by MODE-NAME in current buffer.</dd><dd>This disables MODE-NAME either if it is enabled directly or via
 dependency (in which case all dependents are also disabled), and
-enables it otherwise.</dd></dl><p>Mode toggling hooks:</p><dl><dt>Standard generic function: <code>enable-aux</code> <code>(mode-name)</code></dt><dd>Run after MODE-NAME is enabled.</dd><dd>This generic function is run with <code>current-buffer</code> bound to the buffer
-for which MODE-NAME is being enabled.</dd><dt>Standard generic function: <code>disable-aux</code> <code>(mode-name previous-instance)</code></dt><dd>Run before MODE-NAME is disabled.</dd><dd>This generic function is run with <code>current-buffer</code> bound to the buffer
-for which MODE-NAME is being disabled.</dd></dl><h2 id="mode-hooks">Mode hooks</h2><dl><dt>Standard generic function, setf-able: <code>hooks</code> <code>(object)</code></dt></dl><p>Mode hooks and super-modes both allow enabling some other modes when a mode is enabled, which may be somewhat confusing. Suppose mode A has mode B in its <code>hooks</code> and mode C as its super-mode, note the differences:</p><ul><li operator=""> Mode B (in mode hooks) can be disabled or enabled again independently from mode A, while disabling mode C (as super-mode) also disables mode A</li><li>Code for enabling mode B (in mode hooks) runs after mode A, while code for enabling mode C (as super-mode) runs before mode A</li></ul><p>Thefore, super-modes are best used for expressing dependencies between modes (e.g. <code>minibuffer-completion-mode</code> has <code>minibuffer-mode</code> as a super-mode), and mode hooks are best used for suggesting using some other modes together with a mode (e.g. <code>prog-mode</code> has <code>undo-mode</code> in its mode hooks by default).</p><h2 id="defining-modes">Defining modes</h2><dl><dt>Macro: <code>define-mode</code> <code>(name super-modes slots &amp;rest options)</code></dt><dd>Define a mode with NAME.</dd><dd>Like <code>define-class</code> besides supporting extra OPTIONS:</dd><dd>(:toggler TOGGLER-P): If TOGGLER-P is t, generate a toggler command
-with NAME.</dd><dd>(:lighter LIGHTER): Set the mode's lighter to LIGHTER.</dd></dl>
-</body>
+enables it otherwise.</dd></dl><p>Mode toggling hooks:</p><dl><dt>Standard generic function: <code>enable-aux</code> <code>( . mode-name)</code></dt><dd>Run after MODE-NAME is enabled.</dd><dd>This generic function is run with <code>current-buffer</code> bound to the buffer
+for which MODE-NAME is being enabled.</dd><dt>Standard generic function: <code>disable-aux</code> <code>(mode-name . previous-instance)</code></dt><dd>Run before MODE-NAME is disabled.</dd><dd>This generic function is run with <code>current-buffer</code> bound to the buffer
+for which MODE-NAME is being disabled.</dd></dl><h2 id="mode-hooks">Mode hooks</h2><dl><dt>Standard generic function, setf-able: <code>hooks</code> <code>( . object)</code></dt></dl><p>Mode hooks and super-modes both allow enabling some other modes when a mode is enabled, which may be somewhat confusing. Suppose mode A has mode B in its <code>hooks</code> and mode C as its super-mode, note the differences:</p><ul><li operator=""> Mode B (in mode hooks) can be disabled or enabled again independently from mode A, while disabling mode C (as super-mode) also disables mode A</li><li>Code for enabling mode B (in mode hooks) runs after mode A, while code for enabling mode C (as super-mode) runs before mode A</li></ul><p>Thefore, super-modes are best used for expressing dependencies between modes (e.g. <code>minibuffer-completion-mode</code> has <code>minibuffer-mode</code> as a super-mode), and mode hooks are best used for suggesting using some other modes together with a mode (e.g. <code>prog-mode</code> has <code>undo-mode</code> in its mode hooks by default).</p><h2 id="defining-modes">Defining modes</h2><dl><dt>Macro: <code>define-mode</code> <code>(namesuper-modesslots&amp;rest . options)</code></dt><dd>Define a mode with NAME.</dd><dd>Like <code>define-class</code> besides supporting extra OPTIONS:</dd><dd>(:toggler TOGGLER-P): If TOGGLER-P is t, generate a toggler command
+with NAME.</dd><dd>(:lighter LIGHTER): Set the mode&#39;s lighter to LIGHTER.</dd></dl>
+</body></html>

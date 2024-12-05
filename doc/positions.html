@@ -1,2 +1,294 @@
-<body class="focus-tail"><h1 class="" operator="" id="positions">Positions</h1><p>A <i>position</i> denotes somewhere in the DOM tree, which can be before or after some node, or between two adjacent nodes.</p><p>Positions may become invalid after editing operations. To maintain a valid position across arbitrary editing operations, see <a href="markers.html">Markers</a>.</p><h2 id="types-of-positions">Types of positions</h2><dl><li operator="">An <code>element</code> denotes the position before the <code>element</code>.</li><li><code operator="">(end-pos node)</code> denotes the position at the end of <code>node</code> (after any children).<code>node</code> must be an <code>element</code>.</li><li><code operator="">(text-pos node offset)</code> denotes the position before the <code>offset</code>-th character of <code>node</code>. <code>node</code> must be a <code>text-node</code>.</li><li><code operator="">nil</code> denotes nowhere. Many position-related functions return nil if requested position does not exist, and propagates nil if they receive nil position as an argument.</li></dl><h2 id="node-around-positions">Node around positions</h2><p>The following functions query node around a given position. The return value can be a <code>character</code> or <code>element</code>.If no node is found, nil is returned.</p><dl><dt>Function: <code>node-after</code> <code>(marker-or-pos)</code></dt><dd>Return the node after MARKER-OR-POS.</dd><dt>Function: <code>node-before</code> <code>(marker-or-pos)</code></dt><dd>Return the node before MARKER-OR-POS.</dd><dt>Function: <code>node-containing</code> <code>(marker-or-pos)</code></dt><dd>Return the node containing MARKER-OR-POS.</dd></dl><h2 id="computing-positions">Computing positions</h2><p>Basic position functions:</p><dl><dt>Function: <code>pos-left</code> <code>(pos &amp;key destructive)</code></dt><dd>Return the position to the left of POS.</dd><dd>If DESTRUCTIVE is non-nil, POS might be mutated.</dd><dt>Function: <code>pos-right</code> <code>(pos &amp;key destructive)</code></dt><dd>Return the position to the right of POS.</dd><dd>If DESTRUCTIVE is non-nil, POS might be mutated.</dd><dt>Function: <code>pos-next</code> <code>(pos &amp;key destructive)</code></dt><dd>Return the next position of POS in preorder traversal.</dd><dd>If DESTRUCTIVE is non-nil, POS might be mutated.</dd><dt>Function: <code>pos-prev</code> <code>(pos &amp;key destructive)</code></dt><dd>Return the previous position of POS in preorder traversal.</dd><dd>If DESTRUCTIVE is non-nil, POS might be mutated.</dd><dt>Function: <code>pos-up</code> <code>(pos)</code></dt><dd>Return the parent position of POS.</dd><dt>Function: <code>pos-down</code> <code>(pos)</code></dt><dd>Return the first child position of POS.</dd><dt>Function: <code>pos-down-last</code> <code>(pos)</code></dt><dd>Return the last child position of POS.</dd></dl><p>Iterate until or ensure a position predicate is satisfied: <code>pos-*-until</code>, <code>pos-*-ensure</code></p><p>Destructive variants: <code>npos-*</code></p><p>All of the above functions may take and return nil positions without signaling error.</p><h2 id="comparing-positions">Comparing positions</h2><p>Two positions point to the same location iff they are <code>equalp</code>.</p><p>Additional functions for comparing positions:</p><dl><dt>Function: <code>before-p</code> <code>(pos-1 pos-2)</code></dt><dd>Test if POS-1 is strictly before POS-2 in preorder traversal.</dd></dl>
-</body>
+<!DOCTYPE html>
+<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+
+@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+
+@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.focus{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail{
+    background-color: rgba(169,151,160,0.1);
+}
+
+.focus-tail::after{
+    content: " ";
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 0.4em;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.range-selection{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+code{
+    font-family: monospace;
+}
+
+:link{
+    font-family: CMU Concrete;
+    color: #54454d;
+}
+
+.invisible{
+    display: none;
+}
+
+::highlight(neomacs){
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::highlight(neomacs-range){
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+#neomacs-cursor{
+    position: absolute;
+    min-height: 1em;
+    min-width: 0.3em;
+    z-index: -1;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}</style><style id="neomacs-style-DOC-MODE">body{
+    left: 0;
+    right: 0;
+    white-space: pre-wrap;
+    padding-left: 1em;
+}
+
+body.focus-tail::after{
+    content: "  ";
+    white-space: pre;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}</style><style id="neomacs-style-LISP-MODE">.symbol{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+}
+
+.symbol:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+
+
+.symbol:empty::after{
+    content: "_";
+}
+
+.symbol:empty:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.symbol:empty.focus-tail::after{
+    content: "_";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    color: #a997a0;
+}
+
+.string::before{
+    content: "\"";
+}
+
+.string::after{
+    content: "\"";
+}
+
+.string:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.string.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string.focus-tail::after{
+    content: "\"";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.string:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.object{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    text-decoration: underline;
+}
+
+.object:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.symbol[symbol-type="ghost"]{
+    margin-right: 0!important;
+}
+
+.symbol[symbol-type="macro"][operator]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="keyword"]{
+    color: #d29fa8;
+}
+
+.symbol[symbol-type="special-operator"][operator]{
+    color: #d29fa8;
+}
+
+.list{
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    white-space: pre;
+    padding-left: 0.4em;
+}
+
+.list::before{
+    content: "(";
+    margin-left: -0.4em;
+}
+
+.list::after{
+    content: ")";
+    vertical-align: bottom;
+}
+
+.list:not(:last-child){
+    margin-right: 0.4em;
+}
+
+.list.focus-tail::after{
+    content: ")";
+    width: auto;
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list.focus::before{
+    background-color: rgba(169,151,160,0.5);
+    color: #54454d;
+}
+
+.list:not(:last-child):not(.focus-tail){
+    margin-right: 0.4em;
+}
+
+.comment{
+    display: inline-block;
+    white-space: pre-wrap;
+}
+
+.comment::after{
+    content: "⁣";
+}
+
+.comment[comment-level="1"]{
+    position: sticky;
+    left: 20em;
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="2"]{
+    border-left: 0.3rem solid #a997a0;
+    padding-left: 0.3rem;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]{
+    font-size: 1.2em;
+    color: #a997a0;
+}
+
+.comment[comment-level="3"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+.comment[comment-level="4"]{
+    font-size: 1.1em;
+    color: #a997a0;
+}
+
+.comment[comment-level="4"]::before{
+    content: "";
+    display: list-item;
+    position: absolute;
+}
+
+[compiler-note-severity="note"]{
+    border: solid 1px rgba(169,151,160,1.0);
+}
+
+[compiler-note-severity="style-warning"]{
+    border: dashed 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="warning"]{
+    border: solid 1px rgba(240,0,120,1.0);
+}
+
+[compiler-note-severity="error"]{
+    border: double 1px rgba(240,0,120,1.0);
+}</style><style id="neomacs-style-HTML-DOC-MODE">:empty::after{
+    content: "_";
+}
+
+li p{
+    margin: 0;
+}
+
+body{
+    white-space: normal;
+    max-width: 48rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.comma-expr::before{
+    content: ",";
+}
+
+.comma-expr{
+    border: solid 1px currentColor;
+}</style></head><body><h1 class="" id="positions">Positions</h1><p>A <i>position</i> denotes somewhere in the DOM tree, which can be before or after some node, or between two adjacent nodes.</p><p>Positions may become invalid after editing operations. To maintain a valid position across arbitrary editing operations, see <a href="markers.html">Markers</a>.</p><h2 id="types-of-positions">Types of positions</h2><dl><li>An <code>element</code> denotes the position before the <code>element</code>.</li><li><code>(end-pos node)</code> denotes the position at the end of <code>node</code> (after any children).<code>node</code> must be an <code>element</code>.</li><li><code>(text-pos node offset)</code> denotes the position before the <code>offset</code>-th character of <code>node</code>. <code>node</code> must be a <code>text-node</code>.</li><li><code>nil</code> denotes nowhere. Many position-related functions return nil if requested position does not exist, and propagates nil if they receive nil position as an argument.</li></dl><h2 id="node-around-positions">Node around positions</h2><p>The following functions query node around a given position. The return value can be a <code>character</code> or <code>element</code>.If no node is found, nil is returned.</p><dl><dt>Function: <code>node-after</code> <code>( . marker-or-pos)</code></dt><dd>Return the node after MARKER-OR-POS.</dd><dt>Function: <code>node-before</code> <code>( . marker-or-pos)</code></dt><dd>Return the node before MARKER-OR-POS.</dd><dt>Function: <code>node-containing</code> <code>( . marker-or-pos)</code></dt><dd>Return the node containing MARKER-OR-POS.</dd></dl><h2 id="computing-positions">Computing positions</h2><p>Basic position functions:</p><dl><dt>Function: <code>pos-left</code> <code>(pos&amp;key . destructive)</code></dt><dd>Return the position to the left of POS.</dd><dd>If DESTRUCTIVE is non-nil, POS might be mutated.</dd><dt>Function: <code>pos-right</code> <code>(pos&amp;key . destructive)</code></dt><dd>Return the position to the right of POS.</dd><dd>If DESTRUCTIVE is non-nil, POS might be mutated.</dd><dt>Function: <code>pos-next</code> <code>(pos&amp;key . destructive)</code></dt><dd>Return the next position of POS in preorder traversal.</dd><dd>If DESTRUCTIVE is non-nil, POS might be mutated.</dd><dt>Function: <code>pos-prev</code> <code>(pos&amp;key . destructive)</code></dt><dd>Return the previous position of POS in preorder traversal.</dd><dd>If DESTRUCTIVE is non-nil, POS might be mutated.</dd><dt>Function: <code>pos-up</code> <code>( . pos)</code></dt><dd>Return the parent position of POS.</dd><dt>Function: <code>pos-down</code> <code>( . pos)</code></dt><dd>Return the first child position of POS.</dd><dt>Function: <code>pos-down-last</code> <code>( . pos)</code></dt><dd>Return the last child position of POS.</dd></dl><p>Iterate until or ensure a position predicate is satisfied: <code>pos-*-until</code>, <code>pos-*-ensure</code></p><p>Destructive variants: <code>npos-*</code></p><p>All of the above functions may take and return nil positions without signaling error.</p><h2 id="comparing-positions">Comparing positions</h2><p>Two positions point to the same location iff they are <code>equalp</code>.</p><p>Additional functions for comparing positions:</p><dl><dt>Function: <code>before-p</code> <code>(pos-1 . pos-2)</code></dt><dd>Test if POS-1 is strictly before POS-2 in preorder traversal.</dd></dl>
+</body></html>
