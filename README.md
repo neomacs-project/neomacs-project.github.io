@@ -1,1 +1,1 @@
-[Neomacs documentation](/doc/toc.html)
+[Neomacs documentation](/doc/index.html)
