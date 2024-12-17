@@ -1,9 +1,88 @@
 <!DOCTYPE html>
-<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+<meta charset="UTF-8">
+<html><head><style id="neomacs-style-COMMON">@font-face{
+    font-family: Space Mono;
+    font-style: normal;
+    font-weight: 400;
+    src: url("neomacs://sys/space-mono/SpaceMono-Regular.ttf") format("truetype");
+}
 
-@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+@font-face{
+    font-family: Space Mono;
+    font-style: italic;
+    font-weight: 400;
+    src: url("neomacs://sys/space-mono/SpaceMono-Italic.ttf") format("truetype");
+}
 
-@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+@font-face{
+    font-family: Space Mono;
+    font-style: normal;
+    font-weight: 700;
+    src: url("neomacs://sys/space-mono/SpaceMono-Bold.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: Space Mono;
+    font-style: italic;
+    font-weight: 700;
+    src: url("neomacs://sys/space-mono/SpaceMono-BoldItalic.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: CMU Concrete;
+    font-style: normal;
+    font-weight: 400;
+    src: url("neomacs://sys/cmu-concrete/cmunorm.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: CMU Concrete;
+    font-style: italic;
+    font-weight: 400;
+    src: url("neomacs://sys/cmu-concrete/cmunoti.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: CMU Concrete;
+    font-style: normal;
+    font-weight: 700;
+    src: url("neomacs://sys/cmu-concrete/cmunobx.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: CMU Concrete;
+    font-style: italic;
+    font-weight: 700;
+    src: url("neomacs://sys/cmu-concrete/cmunobi.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: DejaVu Sans Mono;
+    font-style: normal;
+    font-weight: 400;
+    src: url("neomacs://sys/dejavu-sans-mono/DejaVuSansMono.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: DejaVu Sans Mono;
+    font-style: italic;
+    font-weight: 400;
+    src: url("neomacs://sys/dejavu-sans-mono/DejaVuSansMono-Oblique.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: DejaVu Sans Mono;
+    font-style: normal;
+    font-weight: 700;
+    src: url("neomacs://sys/dejavu-sans-mono/DejaVuSansMono-Bold.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: DejaVu Sans Mono;
+    font-style: italic;
+    font-weight: 700;
+    src: url("neomacs://sys/dejavu-sans-mono/DejaVuSansMono-BoldOblique.ttf") format("truetype");
+}</style><style id="neomacs-style-BUFFER">body{
     font-family: CMU Concrete;
     color: #54454d;
 }
@@ -293,4 +372,5 @@ body{
 }</style></head><body><h1 operator="" id="keymaps">Keymaps</h1><h2 id="keys-and-key-sequences">Keys and key sequences</h2><p>Neomacs internally represents keys using the <code>key</code> structure and key sequences using lists of <code>key</code>&#39;s.</p><p>It is usually more convenient to represent keys and key sequences using Emacs-style strings, such as <code>&quot;C-x C-b&quot;</code>. <code>kbd</code> and <code>key-description</code> converts between string and the internal representation.</p><dl><dt>Function: <code>kbd</code> <code>(string)</code></dt><dd>Parse STRING into a key sequence.</dd><dt>Function: <code>key-description</code> <code>(key &amp;optional stream)</code></dt><dd>Format the string representation of KEY and write to STREAM.</dd><dd>KEY can either by a key or a key sequence.</dd><dd>If STREAM is nil, return the string representation instead.</dd></dl><h2 id="defining-keys">Defining keys</h2><dl><dt>Function: <code>set-key</code> <code>(keymap keyspec command)</code></dt><dd>Bind COMMAND to a KEYSPEC in a KEYMAP.</dd><dd>If KEYSPEC argument is a <code>string</code>, valid prefixes are:
 H (Hyper), s (Super), M (Meta), C (Ctrl), S (Shift)</dd><dd>Example: (set-key *global-keymap* &quot;C-x b&quot; &#39;switch-to-buffer)</dd><dt>Macro: <code>define-keys</code> <code>(keymap-name &amp;body bindings)</code></dt><dd>Define key BINDINGS for KEYMAP-NAME.</dd><dd>Example: (define-keys :global
     &quot;C-x b&quot; &#39;switch-to-buffer
-    &quot;C-x k&quot; &#39;delete-buffer)</dd></dl></body></html>
+    &quot;C-x k&quot; &#39;delete-buffer)</dd></dl><h2 id="looking-up-key-bindings">Looking up key bindings</h2><p>When Neomacs <a href="command-loop.html">command loop</a> receive key events, it tries to find a command from a list of <i>active keymaps</i> depending on <a href="modes.html">modes</a> enabled in the buffer and the <a href="buffers.html#buffer-focus">buffer focus</a>. The active keymaps are, in precedence order:</p><ol><li><p>Non-nil <code>keymap</code> <a href="dom.html#special-attributes">attributes</a> of elements surrounding the buffer focus. Inner elements take precedence over outer elements.</p></li><li><p>Keymaps with the same name of modes enabled in current buffer. The precedence order of keymaps is the same as the corresponding modes in the buffer&#39;s class precedence list.</p></li></ol><dl><dt>Function: <code>keymaps</code> <code>(buffer)</code></dt><dd>Compute the list of active keymaps for BUFFER.</dd></dl>
+</body></html>

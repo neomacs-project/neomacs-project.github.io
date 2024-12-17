@@ -1,9 +1,88 @@
 <!DOCTYPE html>
-<html><head><style id="neomacs-style-COMMON">@import url("neomacs://sys/space-mono/space-mono.css");
+<meta charset="UTF-8">
+<html><head><style id="neomacs-style-COMMON">@font-face{
+    font-family: Space Mono;
+    font-style: normal;
+    font-weight: 400;
+    src: url("neomacs://sys/space-mono/SpaceMono-Regular.ttf") format("truetype");
+}
 
-@import url("neomacs://sys/cmu-concrete/cmu-concrete.css");
+@font-face{
+    font-family: Space Mono;
+    font-style: italic;
+    font-weight: 400;
+    src: url("neomacs://sys/space-mono/SpaceMono-Italic.ttf") format("truetype");
+}
 
-@import url("neomacs://sys/dejavu-sans-mono/dejavu-sans-mono.css");</style><style id="neomacs-style-BUFFER">body{
+@font-face{
+    font-family: Space Mono;
+    font-style: normal;
+    font-weight: 700;
+    src: url("neomacs://sys/space-mono/SpaceMono-Bold.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: Space Mono;
+    font-style: italic;
+    font-weight: 700;
+    src: url("neomacs://sys/space-mono/SpaceMono-BoldItalic.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: CMU Concrete;
+    font-style: normal;
+    font-weight: 400;
+    src: url("neomacs://sys/cmu-concrete/cmunorm.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: CMU Concrete;
+    font-style: italic;
+    font-weight: 400;
+    src: url("neomacs://sys/cmu-concrete/cmunoti.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: CMU Concrete;
+    font-style: normal;
+    font-weight: 700;
+    src: url("neomacs://sys/cmu-concrete/cmunobx.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: CMU Concrete;
+    font-style: italic;
+    font-weight: 700;
+    src: url("neomacs://sys/cmu-concrete/cmunobi.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: DejaVu Sans Mono;
+    font-style: normal;
+    font-weight: 400;
+    src: url("neomacs://sys/dejavu-sans-mono/DejaVuSansMono.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: DejaVu Sans Mono;
+    font-style: italic;
+    font-weight: 400;
+    src: url("neomacs://sys/dejavu-sans-mono/DejaVuSansMono-Oblique.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: DejaVu Sans Mono;
+    font-style: normal;
+    font-weight: 700;
+    src: url("neomacs://sys/dejavu-sans-mono/DejaVuSansMono-Bold.ttf") format("truetype");
+}
+
+@font-face{
+    font-family: DejaVu Sans Mono;
+    font-style: italic;
+    font-weight: 700;
+    src: url("neomacs://sys/dejavu-sans-mono/DejaVuSansMono-BoldOblique.ttf") format("truetype");
+}</style><style id="neomacs-style-BUFFER">body{
     font-family: CMU Concrete;
     color: #54454d;
 }
@@ -292,6 +371,6 @@ body{
     border: solid 1px currentColor;
 }</style></head><body><h1 operator="" class="" id="motion">Motion</h1><h2 id="selectable-positions">Selectable positions</h2><p>Neomacs try to keep the focus at selectable positions after every command invocation. The direction of this post-command adjustment is controlled by <code>adjust-marker-direction</code>. Programs can also call <code>ensure-selectable</code> to adjust marker positions. Note the difference between <code>(ensure-selectable (focus) t) and  <code>(setf (adjust-marker-direction (current-buffer)) &#39;backward)</code></code>: the former adjust focus backwards directly, while the latter let the command loop adjust backward after <a href="command-loop.html#buffer-transactions">post-command hooks</a> and <a href="edit.html#editing-hooks">post-command actions</a>.</p><dl><dt>Function: <code>selectable-p</code> <code>(pos)</code></dt><dd>Test if POS is selectable.</dd><dt>Standard generic function: <code>selectable-p-aux</code> <code>(buffer pos)</code></dt><dd>Extension point for <code>selectable-p</code>.</dd><dd>Test if POS is selectable in BUFFER.</dd><dt>Standard generic function, setf-able: <code>adjust-marker-direction</code> <code>(object)</code></dt><dt>Function: <code>ensure-selectable</code> <code>(marker &amp;optional (backward (eql (adjust-marker-direction (host marker)) (quote backward))))</code></dt><dd>Move MARKER to nearest selectable position.</dd><dd>Prefer going forward if BACKWARD is nil. Prefer going backward
 otherwise. Default behavior depends on MARKER&#39;s host buffer&#39;s
-<code>adjust-marker-direction</code> slot.</dd></dl><h2 id="motion-by-nodes-and-elements">Motion by nodes and elements</h2><dl><dt>Command (<code>arrow-right, C-f</code>): <code>forward-node</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to closest selectable preorder successor.</dd><dt>Command (<code>arrow-left, C-b</code>): <code>backward-node</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to closest selectable preorder predecessor.</dd><dt>Command: <code>forward-node-cycle</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Like <code>forward-node</code>, but may wrap around to beginning of buffer.</dd><dt>Command: <code>backward-node-cycle</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Like <code>backward-node</code>, but may wrap around to beginning of buffer.</dd><dt>Command: <code>forward-element</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to first element (excluding line break) to the right.</dd><dt>Command (<code>C-M-b</code>): <code>backward-element</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to first element (excluding line break) to the left.</dd><dt>Command: <code>backward-up-node</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to closest selectable parent.</dd></dl><h2 id="top-level-motion">Top-level motion</h2><dl><dt>Command (<code>M-a</code>): <code>beginning-of-defun</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to current or previous toplevel node.</dd><dt>Command (<code>M-e</code>): <code>end-of-defun</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to next toplevel node.</dd><dt>Command (<code>M-&lt;</code>): <code>beginning-of-buffer</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to beginning of buffer.</dd><dt>Command (<code>M-&gt;</code>): <code>end-of-buffer</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to end of buffer.</dd></dl><h2 id="word-motion">Word motion</h2><dl><dt>Standard generic function, setf-able: <code>word-boundary-list</code> <code>(object)</code></dt><dt>Function: <code>word-character-p</code> <code>(buffer node)</code></dt><dd>Test if NODE is a word constituent character in BUFFER.</dd><dt>Function: <code>word-start-p</code> <code>(pos)</code></dt><dd>Test if POS is at start of a word.</dd><dt>Function: <code>word-end-p</code> <code>(pos)</code></dt><dd>Test if POS is at end of a word.</dd></dl><p>Word motion commands:</p><dl><dt>Command (<code>M-arrow-right, M-f</code>): <code>forward-word</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to next word end position.</dd><dt>Command (<code>M-arrow-left, M-b</code>): <code>backward-word</code> <code>(&amp;optional (marker (focus) non-interactive))</code></dt><dd>Move to previous word start position.</dd></dl><h2 id="line-motion">Line motion</h2><p>Test if position is at line boundary:</p><dl><dt>Function: <code>block-element-p</code> <code>(element)</code></dt><dd>Test if ELEMENT is a block element.</dd><dt>Standard generic function: <code>block-element-p-aux</code> <code>(buffer element)</code></dt><dd>Extension point for <code>block-element-p</code>.</dd><dd>Test if ELEMENT is a block element in BUFFER.</dd><dt>Function: <code>line-start-p</code> <code>(pos)</code></dt><dd>Test if POS is at start of a line.</dd><dt>Function: <code>line-end-p</code> <code>(pos)</code></dt><dd>Test if POS is at end of a line.</dd></dl><p>Move to line boundary:</p><dl><dt>Command (<code>home, C-a</code>): <code>beginning-of-line</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to beginning of line.</dd><dd>Also returns number of skipped selectable position, useful for
+<code>adjust-marker-direction</code> slot.</dd></dl><h2 id="motion-by-nodes-and-elements">Motion by nodes and elements</h2><dl><dt>Command (<code>arrow-right, C-f</code>): <code>forward-node</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to closest selectable preorder successor.</dd><dt>Command (<code>arrow-left, C-b</code>): <code>backward-node</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to closest selectable preorder predecessor.</dd><dt>Command: <code>forward-node-cycle</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Like <code>forward-node</code>, but may wrap around to beginning of buffer.</dd><dt>Command: <code>backward-node-cycle</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Like <code>backward-node</code>, but may wrap around to beginning of buffer.</dd><dt>Command: <code>forward-element</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to first element (excluding line break) to the right.</dd><dt>Command (<code>C-M-b</code>): <code>backward-element</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to first element (excluding line break) to the left.</dd><dt>Command (<code>C-M-u</code>): <code>backward-up-node</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to closest selectable parent.</dd></dl><h2 id="top-level-motion">Top-level motion</h2><dl><dt>Command (<code>M-a</code>): <code>beginning-of-defun</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to current or previous toplevel node.</dd><dt>Command (<code>M-e</code>): <code>end-of-defun</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to next toplevel node.</dd><dt>Command (<code>M-&lt;</code>): <code>beginning-of-buffer</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to beginning of buffer.</dd><dt>Command (<code>M-&gt;</code>): <code>end-of-buffer</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to end of buffer.</dd></dl><h2 id="word-motion">Word motion</h2><dl><dt>Standard generic function, setf-able: <code>word-boundary-list</code> <code>(object)</code></dt><dt>Function: <code>word-character-p</code> <code>(buffer node)</code></dt><dd>Test if NODE is a word constituent character in BUFFER.</dd><dt>Function: <code>word-start-p</code> <code>(pos)</code></dt><dd>Test if POS is at start of a word.</dd><dt>Function: <code>word-end-p</code> <code>(pos)</code></dt><dd>Test if POS is at end of a word.</dd></dl><p>Word motion commands:</p><dl><dt>Command (<code>M-arrow-right, M-f</code>): <code>forward-word</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to next word end position.</dd><dt>Command (<code>M-arrow-left, M-b</code>): <code>backward-word</code> <code>(&amp;optional (marker (focus) non-interactive))</code></dt><dd>Move to previous word start position.</dd></dl><h2 id="line-motion">Line motion</h2><p>Test if position is at line boundary:</p><dl><dt>Function: <code>block-element-p</code> <code>(element)</code></dt><dd>Test if ELEMENT is a block element.</dd><dt>Standard generic function: <code>block-element-p-aux</code> <code>(buffer element)</code></dt><dd>Extension point for <code>block-element-p</code>.</dd><dd>Test if ELEMENT is a block element in BUFFER.</dd><dt>Function: <code>line-start-p</code> <code>(pos)</code></dt><dd>Test if POS is at start of a line.</dd><dt>Function: <code>line-end-p</code> <code>(pos)</code></dt><dd>Test if POS is at end of a line.</dd></dl><p>Move to line boundary:</p><dl><dt>Command (<code>home, C-a</code>): <code>beginning-of-line</code> <code>(&amp;optional (marker (focus)))</code></dt><dd>Move to beginning of line.</dd><dd>Also returns number of skipped selectable position, useful for
 non-interactive use.</dd><dt>Command (<code>end, C-e</code>): <code>end-of-line</code> <code>(&amp;optional (marker (focus)) interactive)</code></dt><dd>Move to end of line.</dd></dl><p>The following commands try to keep horizontal location approximately the same. Currently, we do this by counting the number of selectable positions between current focus position and beginning-of-line position, and try to keep that number the same.</p><dl><dt>Command (<code>arrow-up, C-p</code>): <code>previous-line</code> <code>(&amp;optional (n 1) (marker (focus)))</code></dt><dd>Move to N-th previous line.</dd><dd>Try to keep horizontal location approximately the same.</dd><dt>Command (<code>arrow-down, C-n</code>): <code>next-line</code> <code>(&amp;optional (n 1) (marker (focus)))</code></dt><dd>Move to N-th next line.</dd><dd>Try to keep horizontal location approximately the same.</dd><dt>Standard generic function, setf-able: <code>scroll-lines</code> <code>(object)</code></dt><dt>Command (<code>page-up, M-v</code>): <code>scroll-up-command</code> <code>()</code></dt><dd>Move up <code>scroll-lines</code>.</dd><dt>Command (<code>page-down, C-v</code>): <code>scroll-down-command</code> <code>()</code></dt><dd>Move down <code>scroll-lines</code>.</dd></dl>
 </body></html>
